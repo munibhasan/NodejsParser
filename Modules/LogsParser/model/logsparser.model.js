@@ -1,4 +1,4 @@
-const mongoose = require("../../../utils/mongoose.socketlogs.service").mongoose;
+const mongoose = require("../../../utils/mongoose.service").mongoose;
 
 const Schema = mongoose.Schema;
 
