@@ -16,11 +16,13 @@ const deviceAssignImport = require("./Modules/DeviceAssign/model/deviceassign.mo
 const vehicleImport = require("./Modules/Vehicles/model/vehicle.model");
 const clientImport = require("./Modules/Clients/model/client.model");
 const deviceImport = require("./Modules/Devices/model/device.model");
+const logsParserImport = require("./Modules/LogsParser/model/logsparser.model");
 
 const deviceAssignModel = deviceAssignImport.model;
 const vehicleModel = vehicleImport.model;
 const clientModel = clientImport.model;
 const deviceModel = deviceImport.model;
+const logsParserModel = logsParserImport.model;
 
 var deviceConnections = [];
 
@@ -49,8 +51,18 @@ async function main() {
       }
       throw new Error("Failed to fetch location data");
     } catch (error) {
-      console.error("OSM ERROR", { latitude, longitude }, error.message);
-      return null;
+      return {
+        isErrorOSM: true,
+        errorMessage: error.message,
+      };
+    }
+  }
+
+  function createSocketLog(logData, response) {
+    try {
+      logsParserModel.create({ ...logData, response });
+    } catch (e) {
+      console.log("error creating log", e);
     }
   }
 
@@ -63,29 +75,34 @@ async function main() {
   // redisData = await getAllDataFromRedis(redisClient);
   // console.log("redisData", redisData);
 
-  const io = new Server(1102);
+  const io = new Server({
+    cors: {
+      origin: "http://localhost:3000",
+    },
+  });
+
+  io.listen(1102);
 
   io.on("connection", (socket) => {
     console.log("socket connected", {
       id: socket.id,
-      clientId: socket.handshake.query.ClientId,
+      clientId: socket.handshake.query.clientId,
     });
   });
 
-  function emitDataToSocketByClientId(clientData, sendData) {
+  function emitDataToSocketByClientId(obj) {
+    const { device, clientData, vehicleData, sendData } = obj;
     io.fetchSockets()
       .then((sockets) => {
         sockets.forEach((socket) => {
-          const socketClientId = socket.handshake.query.ClientId;
-          console.log(
-            "Socket for client",
-            socketClientId,
-            clientData?._id.toString()
-          );
-          if (socketClientId === clientData?._id.toString()) {
+          const socketClientId = socket.handshake.query.clientId;
+          if (
+            socketClientId ===
+            (clientData && clientData._id && clientData._id.toString())
+          ) {
             socket.emit("message", sendData);
             console.log("Data emitted to client", {
-              clientName: clientData?._id.toString(),
+              clientId: clientData?._id.toString(),
               clientName: clientData?.clientName,
               socketId: socket.id,
             });
@@ -120,6 +137,16 @@ async function main() {
         if (parser.imei.length === 15) {
           const device = await deviceModel.findOne({ deviceIMEI: IMEI });
           if (!device) {
+            createSocketLog(
+              { IMEI: parser.imei },
+              {
+                type: "ERROR",
+                occursBeforeIMEIAcknowledgement: true,
+                status: 404,
+                message: "Device for this IMEI was not found",
+                data: { parserDecodedData: parser },
+              }
+            );
             return;
           }
 
@@ -132,23 +159,77 @@ async function main() {
             IMEI: parser.imei,
           });
           // sends 1 as acknowledgment so that device can send AVL packets.
+
+          createSocketLog(
+            { IMEI: parser.imei },
+            {
+              type: "ERROR",
+              occursBeforeIMEIAcknowledgement: true,
+              status: 200,
+              message:
+                "Device for this IMEI found. Sending Acknowledgment back to the device.",
+              data: { parserDecodedData: parser },
+            }
+          );
           c.write(Buffer.alloc(1, 1));
         }
       } else {
         const IMEI = deviceConnections.find((row) => row.id === c.id)?.IMEI;
+
         if (!IMEI) {
+          createSocketLog(
+            {},
+            {
+              type: "ERROR",
+              status: 400,
+              message:
+                "Device sent AVL packet assuming the client exists but the server could not find any device socket for this IMEI.",
+            }
+          );
           return;
         }
         let avl = parser.getAvl();
         if (!avl) {
+          createSocketLog(
+            { IMEI: IMEI },
+            {
+              type: "ERROR",
+              status: 400,
+              message: "AVL packet could not be properly parsed.",
+            }
+          );
+
           return;
         }
         avl = { ...avl, IMEI };
         console.log("AVL Data Packet received from IMEI", avl?.IMEI);
         const device = await deviceModel.findOne({ deviceIMEI: IMEI });
+        if (!device) {
+          createSocketLog(
+            { IMEI },
+            {
+              type: "ERROR",
+              status: 400,
+              message: "Device for this IMEI was not found.",
+            }
+          );
+          return;
+        }
         const deviceAssignData = await deviceAssignModel.findOne({
-          DeviceId: device._id,
+          DeviceId: device?._id,
         });
+
+        if (!deviceAssignData) {
+          createSocketLog(
+            { IMEI: IMEI, deviceId: device?._id.toString(), device: device },
+            {
+              type: "ERROR",
+              status: 400,
+              message: "The device has not been assigned",
+            }
+          );
+          return;
+        }
 
         const clientDataPromise = clientModel.findOne({
           _id: deviceAssignData.clientId,
@@ -162,13 +243,39 @@ async function main() {
           vehicleDataPromise,
         ]);
 
+        let logData = {
+          IMEI: IMEI,
+          clientId: clientData?._id.toString(),
+          vehicleId: vehicleData?._id.toString(),
+          deviceId: device?._id.toString(),
+          client: clientData,
+          device: device,
+          vehicle: vehicleData,
+        };
+
+        if (!clientData || !vehicleData) {
+          createSocketLog(logData, {
+            type: "ERROR",
+            status: 404,
+            message: "Either client data or vehicle data could not be found.",
+          });
+          return;
+        }
+
         if (!device || !deviceAssignData || !clientData || !vehicleData) {
           return;
         }
 
-        const clientId = clientData._id.toString();
-        const vehicleId = vehicleData._id.toString();
+        const clientId = clientData?._id.toString();
+        const vehicleId = vehicleData?._id.toString();
         if (!avl?.records || avl?.records?.length === 0) {
+          createSocketLog(logData, {
+            type: "ERROR",
+            status: 404,
+            message: "AVL Records Could Not Be Found In Packet",
+            data: { avl },
+          });
+
           return;
         }
         for (const item of avl?.records) {
@@ -176,6 +283,21 @@ async function main() {
             item.gps.latitude,
             item.gps.longitude
           );
+          if (osmElements?.isErrorOSM) {
+            createSocketLog(logData, {
+              type: "ERROR",
+              status: 404,
+              message: "OSM Error",
+              data: {
+                errorOSM: osmElements?.errorMessage,
+                avlRecord: item,
+                coordinates: {
+                  latitude: item?.gps?.latitude,
+                  longitude: item?.gps?.longitude,
+                },
+              },
+            });
+          }
           let speedWithUnitDesc = "";
           if (clientData.typeOfUnit === "Mile") {
             let convertedSpeed = item.gps.speed / 1.609;
@@ -223,16 +345,56 @@ async function main() {
             rearCameraDualCamVerify: false,
             rearCameraString: "",
           };
-
-          const redisClinetIdData = await redisClient.get(clientId);
+          logData = { payloadSocket: payloadSocket };
+          let redisClinetIdData;
+          try {
+            redisClinetIdData = await redisClient.get(clientId);
+          } catch (e) {
+            createSocketLog(logData, {
+              type: "ERROR",
+              status: 400,
+              message: "Error getting data from redisClient from clientId",
+            });
+          }
 
           if (!redisClinetIdData) {
             const wrappedData = { cacheList: [payloadSocket] };
-            emitDataToSocketByClientId(clientData, wrappedData);
-            await redisSetData(clientId, wrappedData);
+            try {
+              emitDataToSocketByClientId({
+                device,
+                clientData,
+                vehicleData,
+                sendData: wrappedData,
+              });
+              createSocketLog(logData, {
+                type: "INFO",
+                status: 400,
+                message:
+                  "Socket data sent to the client. This is very first data and thus nothing exists in redis. Now setting the data into the redis.",
+              });
+            } catch (e) {
+              createSocketLog(logData, {
+                type: "ERROR",
+                status: 400,
+                message: "Error sending data to the client socket.",
+              });
+            }
+            try {
+              await redisSetData(clientId, wrappedData);
+              createSocketLog(logData, {
+                type: "INFO",
+                status: 200,
+                message: "Data has been set to the redis.",
+              });
+            } catch (e) {
+              createSocketLog(logData, {
+                type: "ERROR",
+                status: 400,
+                message: "Error setting data to the redis.",
+              });
+            }
           } else {
             const redisData = JSON.parse(redisClinetIdData);
-
             const indexToUpdate = redisData.cacheList.findIndex(
               (item) => item.IMEI === IMEI
             );
@@ -246,22 +408,112 @@ async function main() {
               // Check if the new timestamp is not older and not the same as the existing one
               if (newTimestamp >= existingTimestamp) {
                 redisData.cacheList[indexToUpdate] = payloadSocket;
-                emitDataToSocketByClientId(clientData, redisData);
-                await redisSetData(clientId, redisData);
+                try {
+                  emitDataToSocketByClientId({
+                    device,
+                    clientData,
+                    vehicleData,
+                    sendData: redisData,
+                  });
+                  createSocketLog(logData, {
+                    type: "INFO",
+                    status: 400,
+                    message:
+                      "Updated Socket data with respect to timestamp has been sent to the client. Data updated in previous cacheList.",
+                  });
+                } catch (e) {
+                  createSocketLog(logData, {
+                    type: "ERROR",
+                    status: 400,
+                    message:
+                      "Error sending updated to the client socket with respect to timestamp in already made cacheList.",
+                  });
+                }
+
+                try {
+                  await redisSetData(clientId, redisData);
+                  createSocketLog(logData, {
+                    response: {
+                      type: "INFO",
+                      status: 400,
+                      message:
+                        "Updated data has been set in client redis cache.",
+                    },
+                  });
+                } catch (e) {
+                  createSocketLog(logData, {
+                    response: {
+                      type: "ERROR",
+                      status: 400,
+                      message: "Error setting updated cacheList to the redis.",
+                    },
+                  });
+                }
               }
               if (newTimestamp == existingTimestamp) {
                 console.log("Duplicate Record Found", { IMEI, clientId });
+                createSocketLog(logData, {
+                  type: "ERROR",
+                  status: 400,
+                  message: "Duplicate Record Found",
+                });
                 //  TODO: Later if any logic is required.
               }
               if (newTimestamp <= existingTimestamp) {
-                console.log("Old Record Found", { IMEI, clientId });
+                // console.log("Old Record Found", { IMEI, clientId });
                 //  TODO: Later if any logic is required.
+                // emitDataToSocketByClientId({clientData, redisData}); // REMOVE THIS LATER ON AFTER TESTING
+                createSocketLog(logData, {
+                  type: "ERROR",
+                  status: 400,
+                  message: "Old Record Found",
+                });
               }
             } else {
-              //Client exists For new vehicle:
+              //Client exists but the device is new so index could not be found in cacheList, thus adding new device into cacheList.
+
               redisData.cacheList.push(payloadSocket);
-              emitDataToSocketByClientId(clientData, redisData);
-              await redisSetData(clientId, redisData);
+              try {
+                emitDataToSocketByClientId({
+                  device,
+                  clientData,
+                  vehicleData,
+                  sendData: redisData,
+                });
+                createSocketLog(logData, {
+                  type: "INFO",
+                  status: 400,
+                  message:
+                    "Updated Socket data with respect to timestamp has been sent to the client. This is a new device first time being added to cacheList.",
+                });
+              } catch (e) {
+                createSocketLog(logData, {
+                  type: "ERROR",
+                  status: 400,
+                  message:
+                    "Error sending updated to the client socket with respect to timestamp in already made cacheList. This is a new device first time being added to cacheList.",
+                });
+              }
+              try {
+                await redisSetData(clientId, redisData);
+                createSocketLog(logData, {
+                  response: {
+                    type: "INFO",
+                    status: 400,
+                    message:
+                      "Updated data has been set in client redis cache. This is a new device first time being added to cacheList.",
+                  },
+                });
+              } catch (e) {
+                createSocketLog(logData, {
+                  response: {
+                    type: "ERROR",
+                    status: 400,
+                    message:
+                      "Error setting updated cacheList to the redis. This is a new device first time being added to cacheList.",
+                  },
+                });
+              }
             }
           }
         }
@@ -289,4 +541,17 @@ async function main() {
   }
 }
 
-main();
+try {
+  main();
+} catch (err) {
+  console.log("shameel");
+  console.log(err);
+  console.log(parseErr(err));
+  main();
+}
+
+function parseErr(err) {
+  return new Error(err).stack
+    .replace(/^.*[\\/]node_modules[\\/].*$/gm, "")
+    .replace(/\n+/g, "\n");
+}
