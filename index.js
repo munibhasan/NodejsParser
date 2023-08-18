@@ -308,6 +308,7 @@ async function main() {
         }
 
         for (const item of avl?.records) {
+          console.log("item", item);
           const osmElements = await fetchLocationData(
             item.gps.latitude,
             item.gps.longitude
@@ -433,18 +434,8 @@ async function main() {
               const newTimestamp = new Date(payloadSocket.timestampNotParsed);
 
               console.log(
-                "redisData.cacheList[indexToUpdate].timestampNotParsed",
-                redisData.cacheList[indexToUpdate].timestampNotParsed
-              );
-              console.log("existingTimestamp", existingTimestamp);
-
-              console.log(
-                "debug-11 timestamp compare",
-                newTimestamp,
-                existingTimestamp,
-                newTimestamp > existingTimestamp,
-                newTimestamp == existingTimestamp,
-                newTimestamp < existingTimestamp
+                "redisData.cacheList[indexToUpdate]",
+                redisData.cacheList[indexToUpdate]
               );
 
               // Check if the new timestamp is not older and not the same as the existing one
