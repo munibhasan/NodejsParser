@@ -1,3 +1,4 @@
+require("dotenv").config();
 const net = require("net");
 const axios = require("axios");
 const Parser = require("teltonika-parser-ex");
