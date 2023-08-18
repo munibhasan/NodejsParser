@@ -308,7 +308,11 @@ async function main() {
 
           return;
         }
+        console.log("debug-3");
+
         for (const item of avl?.records) {
+          console.log("debug-4");
+
           const osmElements = await fetchLocationData(
             item.gps.latitude,
             item.gps.longitude
@@ -323,6 +327,8 @@ async function main() {
               },
             });
           }
+          console.log("debug-5");
+
           let speedWithUnitDesc = "";
           if (clientData.typeOfUnit === "Mile") {
             let convertedSpeed = item.gps.speed / 1.609;
@@ -340,6 +346,8 @@ async function main() {
           let timestampConverted = moment(item.timestamp)
             .tz(clientData.timeZone)
             .format("MMMM DD YYYY hh:mm:ss A");
+          console.log("debug-6");
+
           const payloadSocket = {
             IMEI: avl?.IMEI,
             clientId,
@@ -372,6 +380,8 @@ async function main() {
           };
           logData = { payloadSocket: payloadSocket };
           let redisClinetIdData;
+          console.log("debug-7");
+
           try {
             redisClinetIdData = await redisClient.get(clientId);
           } catch (e) {
@@ -381,6 +391,7 @@ async function main() {
               message: "Error getting data from redisClient from clientId",
             });
           }
+          console.log("debug-8");
 
           if (!redisClinetIdData) {
             const wrappedData = { cacheList: [payloadSocket] };
@@ -418,7 +429,10 @@ async function main() {
                 message: "Error setting data to the redis.",
               });
             }
+            console.log("debug-9");
           } else {
+            console.log("debug-10");
+
             const redisData = JSON.parse(redisClinetIdData);
             const indexToUpdate = redisData.cacheList.findIndex(
               (item) => item.IMEI === IMEI
@@ -429,6 +443,7 @@ async function main() {
                 redisData.cacheList[indexToUpdate].timestampNotParsed
               );
               const newTimestamp = new Date(payloadSocket.timestampNotParsed);
+              console.log("debug-11");
 
               // Check if the new timestamp is not older and not the same as the existing one
               if (newTimestamp >= existingTimestamp) {
@@ -454,6 +469,7 @@ async function main() {
                       "Error sending updated to the client socket with respect to timestamp in already made cacheList.",
                   });
                 }
+                console.log("debug-12");
 
                 try {
                   await redisSetData(clientId, redisData);
@@ -474,6 +490,7 @@ async function main() {
                     },
                   });
                 }
+                console.log("debug-13");
               }
               if (newTimestamp == existingTimestamp) {
                 console.log("Duplicate Record Found", { IMEI, clientId });
@@ -496,6 +513,7 @@ async function main() {
               }
             } else {
               //Client exists but the device is new so index could not be found in cacheList, thus adding new device into cacheList.
+              console.log("debug-14");
 
               redisData.cacheList.push(payloadSocket);
               try {
@@ -519,6 +537,8 @@ async function main() {
                     "Error sending updated to the client socket with respect to timestamp in already made cacheList. This is a new device first time being added to cacheList.",
                 });
               }
+              console.log("debug-15");
+
               try {
                 await redisSetData(clientId, redisData);
                 createSocketLog(logData, {
@@ -539,9 +559,12 @@ async function main() {
                   },
                 });
               }
+              console.log("debug-16");
             }
           }
         }
+
+        console.log("debug-last");
 
         // This is an acknowledgment for data received in which we have to send total number of data being received by the device.
         let writer = new binutils.BinaryWriter();
