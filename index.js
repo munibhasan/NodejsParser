@@ -443,10 +443,17 @@ async function main() {
                 redisData.cacheList[indexToUpdate].timestampNotParsed
               );
               const newTimestamp = new Date(payloadSocket.timestampNotParsed);
-              console.log("debug-11");
+              console.log(
+                "debug-11 timestamp compare",
+                newTimestamp,
+                existingTimestamp,
+                newTimestamp > existingTimestamp,
+                newTimestamp == existingTimestamp,
+                newTimestamp < existingTimestamp
+              );
 
               // Check if the new timestamp is not older and not the same as the existing one
-              if (newTimestamp >= existingTimestamp) {
+              if (newTimestamp > existingTimestamp) {
                 redisData.cacheList[indexToUpdate] = payloadSocket;
                 try {
                   emitDataToSocketByClientId({
@@ -501,7 +508,7 @@ async function main() {
                 });
                 //  TODO: Later if any logic is required.
               }
-              if (newTimestamp <= existingTimestamp) {
+              if (newTimestamp < existingTimestamp) {
                 // console.log("Old Record Found", { IMEI, clientId });
                 //  TODO: Later if any logic is required.
                 // emitDataToSocketByClientId({clientData, redisData}); // REMOVE THIS LATER ON AFTER TESTING
