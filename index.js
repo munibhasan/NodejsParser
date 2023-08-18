@@ -112,7 +112,7 @@ async function main() {
   io.listen(WEB_SERVER);
 
   io.on("connection", (socket) => {
-    console.log("socket connected", {
+    console.log("client socket connected", {
       id: socket.id,
       clientId: socket.handshake.query.clientId,
     });
@@ -231,7 +231,6 @@ async function main() {
         }
         avl = { ...avl, IMEI };
         console.log("AVL Data Packet received from IMEI", avl?.IMEI);
-        console.log("debug-1");
         const device = await deviceModel.findOne({ deviceIMEI: IMEI });
         if (!device) {
           createSocketLog(
@@ -294,7 +293,6 @@ async function main() {
         if (!device || !deviceAssignData || !clientData || !vehicleData) {
           return;
         }
-        console.log("debug-2");
 
         const clientId = clientData?._id.toString();
         const vehicleId = vehicleData?._id.toString();
@@ -308,11 +306,8 @@ async function main() {
 
           return;
         }
-        console.log("debug-3");
 
         for (const item of avl?.records) {
-          console.log("debug-4");
-
           const osmElements = await fetchLocationData(
             item.gps.latitude,
             item.gps.longitude
@@ -327,7 +322,6 @@ async function main() {
               },
             });
           }
-          console.log("debug-5");
 
           let speedWithUnitDesc = "";
           if (clientData.typeOfUnit === "Mile") {
@@ -346,7 +340,6 @@ async function main() {
           let timestampConverted = moment(item.timestamp)
             .tz(clientData.timeZone)
             .format("MMMM DD YYYY hh:mm:ss A");
-          console.log("debug-6");
 
           const payloadSocket = {
             IMEI: avl?.IMEI,
@@ -380,7 +373,6 @@ async function main() {
           };
           logData = { payloadSocket: payloadSocket };
           let redisClinetIdData;
-          console.log("debug-7");
 
           try {
             redisClinetIdData = await redisClient.get(clientId);
@@ -391,7 +383,6 @@ async function main() {
               message: "Error getting data from redisClient from clientId",
             });
           }
-          console.log("debug-8");
 
           if (!redisClinetIdData) {
             const wrappedData = { cacheList: [payloadSocket] };
@@ -429,10 +420,7 @@ async function main() {
                 message: "Error setting data to the redis.",
               });
             }
-            console.log("debug-9");
           } else {
-            console.log("debug-10");
-
             const redisData = JSON.parse(redisClinetIdData);
             const indexToUpdate = redisData.cacheList.findIndex(
               (item) => item.IMEI === IMEI
@@ -443,6 +431,13 @@ async function main() {
                 redisData.cacheList[indexToUpdate].timestampNotParsed
               );
               const newTimestamp = new Date(payloadSocket.timestampNotParsed);
+
+              console.log(
+                "redisData.cacheList[indexToUpdate].timestampNotParsed",
+                redisData.cacheList[indexToUpdate].timestampNotParsed
+              );
+              console.log("existingTimestamp", existingTimestamp);
+
               console.log(
                 "debug-11 timestamp compare",
                 newTimestamp,
@@ -476,7 +471,6 @@ async function main() {
                       "Error sending updated to the client socket with respect to timestamp in already made cacheList.",
                   });
                 }
-                console.log("debug-12");
 
                 try {
                   await redisSetData(clientId, redisData);
@@ -497,7 +491,6 @@ async function main() {
                     },
                   });
                 }
-                console.log("debug-13");
               }
               if (newTimestamp == existingTimestamp) {
                 console.log("Duplicate Record Found", { IMEI, clientId });
@@ -520,7 +513,6 @@ async function main() {
               }
             } else {
               //Client exists but the device is new so index could not be found in cacheList, thus adding new device into cacheList.
-              console.log("debug-14");
 
               redisData.cacheList.push(payloadSocket);
               try {
@@ -544,7 +536,6 @@ async function main() {
                     "Error sending updated to the client socket with respect to timestamp in already made cacheList. This is a new device first time being added to cacheList.",
                 });
               }
-              console.log("debug-15");
 
               try {
                 await redisSetData(clientId, redisData);
@@ -566,20 +557,26 @@ async function main() {
                   },
                 });
               }
-              console.log("debug-16");
             }
           }
         }
 
-        console.log("debug-last");
-
         // This is an acknowledgment for data received in which we have to send total number of data being received by the device.
+
         let writer = new binutils.BinaryWriter();
         writer.WriteInt32(avl.number_of_data);
         let response = writer.ByteBuffer;
         try {
           // This breaks if vehicle closes connections from whatever reason so the server won't be able to write.
           c.write(response);
+          createSocketLog(logData, {
+            response: {
+              type: "INFO",
+              status: 400,
+              message:
+                "Server has sent acknowledgment of AVL data back to the tracker.",
+            },
+          });
         } catch (e) {
           console.log("This vehicle has been disconneced", c);
         }
@@ -599,7 +596,6 @@ async function main() {
 try {
   main();
 } catch (err) {
-  console.log("shameel");
   console.log(err);
   console.log(parseErr(err));
   main();
