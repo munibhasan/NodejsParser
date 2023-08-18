@@ -64,11 +64,11 @@ async function main() {
 
   function createSocketLog(logData, response) {
     // Disabling it for now because it generates too many logs for us to handle.
-    // try {
-    //   logsParserModel.create({ ...logData, response });
-    // } catch (e) {
-    //   console.log("error creating log", e);
-    // }
+    try {
+      logsParserModel.create({ ...logData, response });
+    } catch (e) {
+      console.log("error creating log", e);
+    }
   }
 
   // This logic stores all data from mongo to redis and then saves all of it in redisData.
