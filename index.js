@@ -72,7 +72,7 @@ async function main() {
       }
     }
     if (process.env.SHOW_CONSOLE_LOG == "true") {
-      console.log("error creating log", response.message);
+      console.log("DEBUG_CONSOLE_LOG: ", response.message);
     }
   }
 
