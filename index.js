@@ -55,10 +55,7 @@ async function main() {
       }
       throw new Error("Failed to fetch location data");
     } catch (error) {
-      return {
-        isErrorOSM: true,
-        errorMessage: error.message,
-      };
+      return null;
     }
   }
 
@@ -318,14 +315,9 @@ async function main() {
             createSocketLog(logData, {
               type: "ERROR",
               status: 404,
-              message: "OSM Error",
+              message: "Open Street Map Error",
               data: {
-                errorOSM: osmElements?.errorMessage,
                 avlRecord: item,
-                coordinates: {
-                  latitude: item?.gps?.latitude,
-                  longitude: item?.gps?.longitude,
-                },
               },
             });
           }
