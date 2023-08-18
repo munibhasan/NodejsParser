@@ -308,7 +308,6 @@ async function main() {
         }
 
         for (const item of avl?.records) {
-          console.log("item", item);
           const osmElements = await fetchLocationData(
             item.gps.latitude,
             item.gps.longitude
