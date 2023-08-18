@@ -5,6 +5,7 @@ const binutils = require("binutils64");
 const moment = require("moment-timezone");
 const { Server } = require("socket.io");
 const { v4: uuidv4 } = require("uuid");
+const server = require("https");
 
 const redisConnectionHelper = require("./utils/redisConnectionHelper");
 // const mongoClientConnectionHelper = require("../utils/mongoClientConnectionHelper");
@@ -81,7 +82,28 @@ async function main() {
     },
   });
 
-  io.listen(1102);
+  // const folder = path.join(__dirname, "ssl");
+  // const privateKey = fs.readFileSync(
+  //   path.join(folder, "server_key.pem"),
+  //   "utf8"
+  // );
+  // const certificate = fs.readFileSync(
+  //   path.join(folder, "server_cert.pem"),
+  //   "utf8"
+  // );
+
+  const optSsl = {
+    // key: privateKey,
+    // cert: certificate,
+    // ca: [certificate],
+    requestCert: false, // put true if you want a client certificate, tested and it works
+    rejectUnauthorized: false,
+  };
+
+  const WEB_SERVER = server.createServer(optSsl);
+
+  WEB_SERVER.listen(1102);
+  io.listen(WEB_SERVER);
 
   io.on("connection", (socket) => {
     console.log("socket connected", {
