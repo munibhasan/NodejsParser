@@ -231,6 +231,7 @@ async function main() {
         }
         avl = { ...avl, IMEI };
         console.log("AVL Data Packet received from IMEI", avl?.IMEI);
+        console.log("debug-1");
         const device = await deviceModel.findOne({ deviceIMEI: IMEI });
         if (!device) {
           createSocketLog(
@@ -293,6 +294,7 @@ async function main() {
         if (!device || !deviceAssignData || !clientData || !vehicleData) {
           return;
         }
+        console.log("debug-2");
 
         const clientId = clientData?._id.toString();
         const vehicleId = vehicleData?._id.toString();
