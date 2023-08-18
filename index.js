@@ -432,11 +432,6 @@ async function main() {
               );
               const newTimestamp = new Date(payloadSocket.timestamp);
 
-              console.log(
-                "redisData.cacheList[indexToUpdate]",
-                redisData.cacheList[indexToUpdate]
-              );
-
               // Check if the new timestamp is not older and not the same as the existing one
               if (newTimestamp > existingTimestamp) {
                 redisData.cacheList[indexToUpdate] = payloadSocket;
