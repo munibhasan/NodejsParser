@@ -427,19 +427,19 @@ async function main() {
             );
             if (indexToUpdate !== -1) {
               // This means that IMEI exists so we have to update the data after checking timestamps
-              const newTimestamp = moment().tz(clientData.timeZone);
-              const existingTimestamp = moment(
+              // Convert the stored timestamp to a moment object using the provided timezone
+              const storedTimestamp = moment(
                 redisData.cacheList[indexToUpdate].timestamp
               ).tz(clientData.timeZone);
-              const secondsDifference = newTimestamp.diff(
-                existingTimestamp,
+
+              // Get the current timestamp
+              const currentTimestamp = moment().tz(clientData.timeZone);
+
+              // Calculate the difference in seconds between the two timestamps
+              const secondsDifference = currentTimestamp.diff(
+                storedTimestamp,
                 "seconds"
               );
-              console.log({
-                newTimestamp,
-                existingTimestamp,
-                secondsDifference,
-              });
 
               // Check if the new timestamp is not older and not the same as the existing one
               if (secondsDifference > 0) {
@@ -485,16 +485,7 @@ async function main() {
                     },
                   });
                 }
-              } else if (secondsDifference == 0) {
-                console.log("Duplicate Record Found", { IMEI, clientId });
-                createSocketLog(logData, {
-                  type: "ERROR",
-                  status: 400,
-                  message: "Duplicate Record Found",
-                });
-                //  TODO: Later if any logic is required.
-              }
-              if (secondsDifference < 0) {
+              } else if (secondsDifference < 0) {
                 // console.log("Old Record Found", { IMEI, clientId });
                 //  TODO: Later if any logic is required.
                 // emitDataToSocketByClientId({clientData, redisData}); // REMOVE THIS LATER ON AFTER TESTING
@@ -503,6 +494,14 @@ async function main() {
                   status: 400,
                   message: `Old Record Found - Seconds Difference ${secondsDifference}`,
                 });
+              } else {
+                console.log("Duplicate Record Found", { IMEI, clientId });
+                createSocketLog(logData, {
+                  type: "ERROR",
+                  status: 400,
+                  message: "Duplicate Record Found",
+                });
+                //  TODO: Later if any logic is required.
               }
             } else {
               //Client exists but the device is new so index could not be found in cacheList, thus adding new device into cacheList.
