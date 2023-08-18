@@ -1,6 +1,7 @@
 const redis = require("redis");
 
 module.exports = async function redisConnectionHelper() {
+  console.log("REDIS URL", process.env.REDIS_SERVER_URL);
   const redisClient = redis.createClient({
     url: process.env.REDIS_SERVER_URL,
   });
