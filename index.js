@@ -493,7 +493,7 @@ async function main() {
                 createSocketLog(logData, {
                   type: "ERROR",
                   status: 400,
-                  message: "Old Record Found",
+                  message: `Old Record Found ${IMEI}`,
                 });
               }
             } else {
