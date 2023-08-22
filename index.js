@@ -68,7 +68,26 @@ async function main() {
     // Disabling it for now because it generates too many logs for us to handle.
     if (process.env.MONGO_LOG_SAVE == "true") {
       try {
-        logsParserModel.create({ ...logData, response });
+        // logsParserModel.create({ ...logData, response });
+        const data = JSON.stringify({ ...logData, response });
+        const API_CONFIG_LOGS = {
+          method: "post",
+          maxBodyLength: Infinity,
+          url: process.env.LOGS_URL,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          data: data,
+        };
+        try {
+          //sends the data, don't listen to any response.
+          axios
+            .request(API_CONFIG_LOGS)
+            // .then((result) => console.log("Storing Logs", result))
+            .catch((er) => console.log("logs err", er));
+        } catch (e) {
+          console.log("storing log error", e);
+        }
       } catch (e) {
         console.log("error creating log", e);
       }
