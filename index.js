@@ -39,18 +39,23 @@ async function main() {
   const redisClient = await redisConnectionHelper();
 
   async function fetchLocationData(latitude, longitude) {
-    let coordinatesStr = `${latitude},${longitude}`;
-    const redisCoordinates = await redisClient.get(coordinatesStr);
-    if (redisCoordinates) {
-      return JSON.parse(redisCoordinates);
-    }
+    // REDIS FUNCTIONALITY TO STORE LATITUDE AND LONGITUDE HAS BEEN DISABLED.
+
+    // let coordinatesStr = `${latitude},${longitude}`;
+    // const redisCoordinates = await redisClient.get(coordinatesStr);
+    // if (redisCoordinates) {
+    //   return JSON.parse(redisCoordinates);
+    // }
     const nominatimBaseUrl = "https://nominatim.openstreetmap.org/reverse";
     const urlParameters = `?lat=${latitude}&lon=${longitude}&zoom=19&format=jsonv2&accept-language=en`;
 
     try {
       const response = await axios.get(nominatimBaseUrl + urlParameters);
       if (response.status === 200) {
-        redisClient.set(coordinatesStr, JSON.stringify(response.data));
+        // Expire it in 10 days: EX: 60 * 60 * 24 seconds = 1 day * 10 = 10 days.
+        // redisClient.set(coordinatesStr, JSON.stringify(response.data), {
+        //   EX: 60 * 60 * 24 * 10,
+        // });
         return response.data;
       }
       throw new Error("Failed to fetch location data");
@@ -395,7 +400,7 @@ async function main() {
               });
               createSocketLog(logData, {
                 type: "INFO",
-                status: 400,
+                status: 200,
                 message:
                   "Socket data sent to the client. This is very first data and thus nothing exists in redis. Now setting the data into the redis.",
               });
@@ -444,7 +449,7 @@ async function main() {
                   });
                   createSocketLog(logData, {
                     type: "INFO",
-                    status: 400,
+                    status: 200,
                     message:
                       "Updated Socket data with respect to timestamp has been sent to the client. Data updated in previous cacheList.",
                   });
@@ -462,7 +467,7 @@ async function main() {
                   createSocketLog(logData, {
                     response: {
                       type: "INFO",
-                      status: 400,
+                      status: 200,
                       message:
                         "Updated data has been set in client redis cache.",
                     },
@@ -509,7 +514,7 @@ async function main() {
                 });
                 createSocketLog(logData, {
                   type: "INFO",
-                  status: 400,
+                  status: 200,
                   message:
                     "Updated Socket data with respect to timestamp has been sent to the client. This is a new device first time being added to cacheList.",
                 });
@@ -527,7 +532,7 @@ async function main() {
                 createSocketLog(logData, {
                   response: {
                     type: "INFO",
-                    status: 400,
+                    status: 200,
                     message:
                       "Updated data has been set in client redis cache. This is a new device first time being added to cacheList.",
                   },
@@ -557,7 +562,7 @@ async function main() {
           createSocketLog(logData, {
             response: {
               type: "INFO",
-              status: 400,
+              status: 200,
               message:
                 "Server has sent acknowledgment of AVL data back to the tracker.",
             },

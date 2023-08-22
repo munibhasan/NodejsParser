@@ -1,10 +1,4 @@
 const mongoose = require("../../../utils/mongoose.service").mongoose;
-var ObjectId = require("mongodb").ObjectID;
-const redis = require("redis");
-const redisClient = redis.createClient(process.env.redisServer);
-redisClient.on("Redis error", function (error) {
-  console.error(error);
-});
 
 const Schema = mongoose.Schema;
 
