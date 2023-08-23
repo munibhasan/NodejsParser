@@ -11,9 +11,6 @@ const path = require("path");
 const fs = require("fs");
 
 const redisConnectionHelper = require("./utils/redisConnectionHelper");
-// const mongoClientConnectionHelper = require("../utils/mongoClientConnectionHelper");
-// const storeCollectionsDataInRedis = require("./utils/storeCollectionsDataInRedis");
-// const getAllDataFromRedis = require("./utils/getAllDataFromRedis");
 
 //Importing Models
 const deviceAssignImport = require("./Modules/DeviceAssign/model/deviceassign.model");
@@ -33,9 +30,6 @@ var deviceConnections = [];
 const PARSER_PORT = 1101;
 
 async function main() {
-  // let redisData;
-
-  //   const mongoClient = await mongoClientConnectionHelper();
   const redisClient = await redisConnectionHelper();
 
   async function fetchLocationData(latitude, longitude) {
@@ -84,7 +78,11 @@ async function main() {
           axios
             .request(API_CONFIG_LOGS)
             // .then((result) => console.log("Storing Logs", result))
-            .catch((er) => console.log("logs err", er));
+            .catch((er) => {
+              if (process.env.SHOW_CONSOLE_LOG == "true") {
+                console.log("Error creating MongoDB Log");
+              }
+            });
         } catch (e) {
           console.log("storing log error", e);
         }
@@ -93,7 +91,9 @@ async function main() {
       }
     }
     if (process.env.SHOW_CONSOLE_LOG == "true") {
-      console.log("DEBUG_CONSOLE_LOG: ", response.message);
+      if (response?.message) {
+        console.log("DEBUG_CONSOLE_LOG: ", response.message);
+      }
     }
   }
 
