@@ -23,7 +23,7 @@ const deviceAssignModel = deviceAssignImport.model;
 const vehicleModel = vehicleImport.model;
 const clientModel = clientImport.model;
 const deviceModel = deviceImport.model;
-const logsParserModel = logsParserImport.model;
+// const logsParserModel = logsParserImport.model;
 
 var deviceConnections = [];
 
@@ -31,32 +31,6 @@ const PARSER_PORT = 1101;
 
 async function main() {
   const redisClient = await redisConnectionHelper();
-
-  async function fetchLocationData(latitude, longitude) {
-    // REDIS FUNCTIONALITY TO STORE LATITUDE AND LONGITUDE HAS BEEN DISABLED.
-
-    // let coordinatesStr = `${latitude},${longitude}`;
-    // const redisCoordinates = await redisClient.get(coordinatesStr);
-    // if (redisCoordinates) {
-    //   return JSON.parse(redisCoordinates);
-    // }
-    const nominatimBaseUrl = "https://nominatim.openstreetmap.org/reverse";
-    const urlParameters = `?lat=${latitude}&lon=${longitude}&zoom=19&format=jsonv2&accept-language=en`;
-
-    try {
-      const response = await axios.get(nominatimBaseUrl + urlParameters);
-      if (response.status === 200) {
-        // Expire it in 10 days: EX: 60 * 60 * 24 seconds = 1 day * 10 = 10 days.
-        // redisClient.set(coordinatesStr, JSON.stringify(response.data), {
-        //   EX: 60 * 60 * 24 * 10,
-        // });
-        return response.data;
-      }
-      throw new Error("Failed to fetch location data");
-    } catch (error) {
-      return null;
-    }
-  }
 
   function createSocketLog(logData, response) {
     // Disabling it for now because it generates too many logs for us to handle.
@@ -75,14 +49,11 @@ async function main() {
         };
         try {
           //sends the data, don't listen to any response.
-          axios
-            .request(API_CONFIG_LOGS)
-            // .then((result) => console.log("Storing Logs", result))
-            .catch((er) => {
-              if (process.env.SHOW_CONSOLE_LOG == "true") {
-                console.log("Error creating MongoDB Log");
-              }
-            });
+          axios.request(API_CONFIG_LOGS).catch((er) => {
+            if (process.env.SHOW_CONSOLE_LOG == "true") {
+              console.log("Error creating MongoDB Log");
+            }
+          });
         } catch (e) {
           console.log("storing log error", e);
         }
@@ -96,15 +67,6 @@ async function main() {
       }
     }
   }
-
-  // This logic stores all data from mongo to redis and then saves all of it in redisData.
-  // This is not required with current business logic. Commenting it out for first commit. Remove it in proceeding commits.
-  //   ^
-  //   |
-  //   |
-  // await storeCollectionsDataInRedis(mongoClient, redisClient);
-  // redisData = await getAllDataFromRedis(redisClient);
-  // console.log("redisData", redisData);
 
   const io = new Server({
     cors: {
@@ -332,20 +294,22 @@ async function main() {
         }
 
         for (const item of avl?.records) {
-          const osmElements = await fetchLocationData(
-            item.gps.latitude,
-            item.gps.longitude
-          );
-          if (osmElements?.isErrorOSM) {
-            createSocketLog(logData, {
-              type: "ERROR",
-              status: 404,
-              message: "Open Street Map Error",
-              data: {
-                avlRecord: item,
-              },
-            });
-          }
+          // Disabling OSM Logic from parser due to extreme network resources being used.
+          // const osmElements = await fetchLocationData(
+          //   item.gps.latitude,
+          //   item.gps.longitude
+          // );
+          // if (osmElements?.isErrorOSM) {
+          //   createSocketLog(logData, {
+          //     type: "ERROR",
+          //     status: 404,
+          //     message: "Open Street Map Error",
+          //     data: {
+          //       avlRecord: item,
+          //     },
+          //   });
+          // }
+          let osmElements = null;
 
           let speedWithUnitDesc = "";
           if (clientData.typeOfUnit === "Mile") {
@@ -369,25 +333,25 @@ async function main() {
             IMEI: avl?.IMEI,
             clientId,
             vehicleId,
-            vehicleMake: vehicleData.vehicleMake,
-            vehicleModel: vehicleData.vehicleModel,
-            vehicleNo: vehicleData.vehicleNo,
-            vehicleReg: vehicleData.vehicleReg,
-            DriverName: vehicleData.currentDriverName,
+            vehicleMake: vehicleData?.vehicleMake,
+            vehicleModel: vehicleData?.vehicleModel,
+            vehicleNo: vehicleData?.vehicleNo,
+            vehicleReg: vehicleData?.vehicleReg,
+            DriverName: vehicleData?.currentDriverName,
             gps: {
-              latitude: item.gps.latitude,
-              longitude: item.gps.longitude,
-              Altitude: item.gps.altitude,
-              Angle: item.gps.angle,
-              satellites: item.gps.satellites,
-              speed: item.gps.speed,
-              speedUnit: clientData.typeOfUnit + " " + "/Hr",
+              latitude: item?.gps.latitude,
+              longitude: item?.gps.longitude,
+              Altitude: item?.gps.altitude,
+              Angle: item?.gps.angle,
+              satellites: item?.gps.satellites,
+              speed: item?.gps.speed,
+              speedUnit: clientData?.typeOfUnit + " " + "/Hr",
               speedWithUnitDesc,
             },
             OSM: osmElements,
             ignition: ignitionValue,
             timestamp: timestampConverted,
-            timestampNotParsed: item.timestamp,
+            timestampNotParsed: item?.timestamp,
             vehicleEventList: [],
             dualCam: false,
             frontCameraDualCamVerify: false,
