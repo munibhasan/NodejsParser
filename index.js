@@ -309,6 +309,18 @@ async function main() {
           //     },
           //   });
           // }
+
+          if (item?.gps?.latitude == 0 || item?.gps?.longitude == 0) {
+            createSocketLog(
+              { IMEI: avl?.IMEI },
+              {
+                type: "ERROR",
+                status: 400,
+                message: "Latitude and Longitude is 0.",
+              }
+            );
+            return;
+          }
           let osmElements = null;
 
           let speedWithUnitDesc = "";
@@ -339,12 +351,12 @@ async function main() {
             vehicleReg: vehicleData?.vehicleReg,
             DriverName: vehicleData?.currentDriverName,
             gps: {
-              latitude: item?.gps.latitude,
-              longitude: item?.gps.longitude,
-              Altitude: item?.gps.altitude,
-              Angle: item?.gps.angle,
-              satellites: item?.gps.satellites,
-              speed: item?.gps.speed,
+              latitude: item?.gps?.latitude,
+              longitude: item?.gps?.longitude,
+              Altitude: item?.gps?.altitude,
+              Angle: item?.gps?.angle,
+              satellites: item?.gps?.satellites,
+              speed: item?.gps?.speed,
               speedUnit: clientData?.typeOfUnit + " " + "/Hr",
               speedWithUnitDesc,
             },
