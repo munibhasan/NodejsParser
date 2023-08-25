@@ -393,7 +393,6 @@ async function main() {
                     type: "INFO",
                     status: 200,
                     message: "AVL Record Stored.",
-                    data: el,
                   });
                 })
                 .catch((er) => {
