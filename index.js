@@ -401,7 +401,6 @@ async function main() {
                     type: "ERROR",
                     status: 400,
                     message: "Error storing AVL Record",
-                    error: er,
                   });
                 });
             } catch (e) {
@@ -409,7 +408,6 @@ async function main() {
                 type: "ERROR",
                 status: 400,
                 message: "Error storing AVL Record",
-                error: e,
               });
             }
           }
