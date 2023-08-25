@@ -409,7 +409,7 @@ async function main() {
                 type: "ERROR",
                 status: 400,
                 message: "Error storing AVL Record",
-                error: JSON.stringify(e),
+                error: e,
               });
             }
           }
