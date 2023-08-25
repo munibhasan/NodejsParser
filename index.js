@@ -374,6 +374,46 @@ async function main() {
           logData = { payloadSocket: payloadSocket };
           let redisClinetIdData;
 
+          if (process.env.SEND_DATA_TO_PARSER_PROCESSOR == "true") {
+            try {
+              const API_CONFIG_PARSER_PROCESSOR = {
+                method: "post",
+                maxBodyLength: Infinity,
+                url: process.env.PARSER_PROCESSOR_URL,
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                data: JSON.stringify(payloadSocket),
+              };
+              //sends the data, don't listen to any response.
+              axios
+                .request(API_CONFIG_PARSER_PROCESSOR)
+                .then((el) => {
+                  createSocketLog(logData, {
+                    type: "INFO",
+                    status: 200,
+                    message: "AVL Record Stored.",
+                    data: el,
+                  });
+                })
+                .catch((er) => {
+                  createSocketLog(logData, {
+                    type: "ERROR",
+                    status: 400,
+                    message: "Error storing AVL Record",
+                    error: JSON.stringify(er),
+                  });
+                });
+            } catch (e) {
+              createSocketLog(logData, {
+                type: "ERROR",
+                status: 400,
+                message: "Error storing AVL Record",
+                error: JSON.stringify(e),
+              });
+            }
+          }
+
           try {
             redisClinetIdData = await redisClient.get(clientId);
           } catch (e) {
