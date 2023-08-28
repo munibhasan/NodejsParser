@@ -51,7 +51,7 @@ async function main() {
           //sends the data, don't listen to any response.
           axios.request(API_CONFIG_LOGS).catch((er) => {
             if (process.env.SHOW_CONSOLE_LOG == "true") {
-              console.log("Error creating MongoDB Log", er);
+              console.log("Error creating MongoDB Log");
             }
           });
         } catch (e) {
