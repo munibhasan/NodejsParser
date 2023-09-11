@@ -29,6 +29,13 @@ var deviceConnections = [];
 
 const PARSER_PORT = 1101;
 
+function parseUsingSecondLibrary(buffer) {
+  //This is going to be used for GPRS purpose.
+  // Library to be used is: complete-teltonika-parser
+  const hexa = buffer?.toString("hex");
+  console.log("hexa", hexa);
+}
+
 async function main() {
   const redisClient = await redisConnectionHelper();
 
@@ -143,6 +150,7 @@ async function main() {
     });
 
     c.on("data", async (data) => {
+      // parseUsingSecondLibrary(data);
       let buffer = data;
       let parser = new Parser(buffer);
 
@@ -373,6 +381,8 @@ async function main() {
           };
           logData = { payloadSocket: payloadSocket };
           let redisClinetIdData;
+          // Implement socket here to send `avl_record` after being parsed.
+          // io.emit("avl_record", payloadSocket);
 
           if (process.env.SEND_DATA_TO_PARSER_PROCESSOR == "true") {
             try {
@@ -385,7 +395,7 @@ async function main() {
                 },
                 data: JSON.stringify(payloadSocket),
               };
-              //sends the data, don't listen to any response.
+              //sends the data in async method so that the code is not stopped here.
               axios
                 .request(API_CONFIG_PARSER_PROCESSOR)
                 .then((el) => {
