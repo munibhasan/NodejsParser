@@ -29,13 +29,6 @@ var deviceConnections = [];
 
 const PARSER_PORT = 1101;
 
-function parseUsingSecondLibrary(buffer) {
-  //This is going to be used for GPRS purpose.
-  // Library to be used is: complete-teltonika-parser
-  const hexa = buffer?.toString("hex");
-  console.log("hexa", hexa);
-}
-
 async function main() {
   const redisClient = await redisConnectionHelper();
 
@@ -142,6 +135,21 @@ async function main() {
   }
 
   let serverParser = net.createServer((c) => {
+    // Keep this function here because we need "c" to send the data to the server.
+    function processGPRS(buffer) {
+      // This is going to be used for GPRS purpose.
+      // Use functions provided in GPRS folder to parse and generate Codec12.
+      const hexa = buffer?.toString("hex");
+      console.log("hexa", hexa);
+
+      // Use "c" to send thed data like this:
+
+      // let writer = new binutils.BinaryWriter();
+      // writer.WriteInt32(avl.number_of_data);
+      // let response = writer.ByteBuffer;
+      // c.write(response);
+    }
+
     c.id = uuidv4();
     console.log("Tracker connected", c.id);
 
@@ -150,7 +158,7 @@ async function main() {
     });
 
     c.on("data", async (data) => {
-      // parseUsingSecondLibrary(data);
+      // processGPRS(data);
       let buffer = data;
       let parser = new Parser(buffer);
 
