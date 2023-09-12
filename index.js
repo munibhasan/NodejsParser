@@ -9,6 +9,7 @@ const { v4: uuidv4 } = require("uuid");
 const server = require("https");
 const path = require("path");
 const fs = require("fs");
+const GPRS = require("./GPRS");
 
 const redisConnectionHelper = require("./utils/redisConnectionHelper");
 
@@ -17,13 +18,13 @@ const deviceAssignImport = require("./Modules/DeviceAssign/model/deviceassign.mo
 const vehicleImport = require("./Modules/Vehicles/model/vehicle.model");
 const clientImport = require("./Modules/Clients/model/client.model");
 const deviceImport = require("./Modules/Devices/model/device.model");
-const logsParserImport = require("./Modules/LogsParser/model/logsparser.model");
+const gprsCommandImport = require("./Modules/GPRSCOMMAND/model/gprscommand.model");
 
 const deviceAssignModel = deviceAssignImport.model;
 const vehicleModel = vehicleImport.model;
 const clientModel = clientImport.model;
 const deviceModel = deviceImport.model;
-// const logsParserModel = logsParserImport.model;
+const gprsModel = gprsCommandImport.model;
 
 var deviceConnections = [];
 
@@ -98,6 +99,12 @@ async function main() {
   io.listen(WEB_SERVER);
 
   io.on("connection", (socket) => {
+    //This code is used to get current connected trackers with this server.
+    // TODO: Implement security token in args so that not everyone can get this data.
+    socket.on("getConnectedSockets", (arg) => {
+      io.emit("getConnectedSocketsResponse", deviceConnections);
+    });
+
     console.log("client socket connected", {
       id: socket.id,
       clientId: socket.handshake.query.clientId,
@@ -136,18 +143,38 @@ async function main() {
 
   let serverParser = net.createServer((c) => {
     // Keep this function here because we need "c" to send the data to the server.
-    function processGPRS(buffer) {
-      // This is going to be used for GPRS purpose.
-      // Use functions provided in GPRS folder to parse and generate Codec12.
+    async function sendGPRS(IMEI) {
+      // The function gets "Pending" command from the model and send the commands to the device and then marks it "Complete"
+      const GPRS_PENDING_COMMANDS_LIST = await gprsModel.find({
+        status: "Pending",
+        deviceIMEI: IMEI,
+      });
+      for (let i = 0; i < GPRS_PENDING_COMMANDS_LIST.length; i++) {
+        const commandCodec12 = GPRS.generateCodec12(
+          GPRS_PENDING_COMMANDS_LIST[i].commandtext
+        );
+
+        console.log("Processing Codec Command", {
+          commandtext: GPRS_PENDING_COMMANDS_LIST[i].commandtext,
+          commandCodec12,
+        });
+        c.write(Buffer.from(commandCodec12, "hex"));
+        await gprsModel.findByIdAndUpdate(GPRS_PENDING_COMMANDS_LIST[i].id, {
+          status: "Complete",
+        });
+      }
+    }
+
+    async function parseGPRS(buffer, IMEI) {
       const hexa = buffer?.toString("hex");
-      console.log("hexa", hexa);
-
-      // Use "c" to send thed data like this:
-
-      // let writer = new binutils.BinaryWriter();
-      // writer.WriteInt32(avl.number_of_data);
-      // let response = writer.ByteBuffer;
-      // c.write(response);
+      const parsedCodec12 = GPRS.parseCodec12(hexa);
+      if (parsedCodec12?.command) {
+        gprsModel.create({
+          status: "Response",
+          deviceIMEI: IMEI,
+          commandtext: parsedCodec12?.command,
+        });
+      }
     }
 
     c.id = uuidv4();
@@ -158,7 +185,6 @@ async function main() {
     });
 
     c.on("data", async (data) => {
-      // processGPRS(data);
       let buffer = data;
       let parser = new Parser(buffer);
 
@@ -298,7 +324,37 @@ async function main() {
 
         const clientId = clientData?._id.toString();
         const vehicleId = vehicleData?._id.toString();
+
+        try {
+          sendGPRS(IMEI);
+        } catch (e) {
+          console.log(
+            createSocketLog(
+              { IMEI },
+              {
+                type: "ERROR",
+                status: 500,
+                message: "Error in sending GPRS",
+              }
+            )
+          );
+        }
+
         if (!avl?.records || avl?.records?.length === 0) {
+          try {
+            parseGPRS(buffer, IMEI);
+          } catch (e) {
+            console.log(
+              createSocketLog(
+                { IMEI },
+                {
+                  type: "ERROR",
+                  status: 500,
+                  message: "Error in parsing GPRS",
+                }
+              )
+            );
+          }
           createSocketLog(logData, {
             type: "ERROR",
             status: 404,

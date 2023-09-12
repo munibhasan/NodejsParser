@@ -4,7 +4,7 @@ const CRC16_1 = require("./utils/CRC16");
 const calcCRC16 = (str) =>
   (0, CRC16_1.CalcCRC16)(str).toString(16).padStart(8, "0");
 
-function generateCodec12(command) {
+exports.generateCodec12 = function (command) {
   command = (0, stringUtil_1.toHex)(command);
   let commandSize = (command.length / 2).toString(16);
   let data = {
@@ -23,9 +23,9 @@ function generateCodec12(command) {
     calcCRC16(dataStr);
 
   return returnObj.toUpperCase();
-}
+};
 
-function parseCodec12(hexStr) {
+exports.parseCodec12 = function (hexStr) {
   let [preamble, content, crc] = (0, stringUtil_1.splitAt)(hexStr, 8, -8);
   if (preamble !== "".padStart(8, "0"))
     console.log(`GPRS PARSE ERROR: Invalid preamble.`);
@@ -40,7 +40,7 @@ function parseCodec12(hexStr) {
   stringUtil_1.splitAt)(data, 2, 2, 2, -2);
   if (quantity1 !== quantity2)
     console.log(`GPRS PARSE ERROR: Command quantity did not match.`);
-  if (codec == "0C") {
+  if (codec == "0C" || codec == "0c") {
     if (!["05", "06"].includes(type))
       console.log(`GPRS PARSE ERROR: Invalid type.`);
     let [commandSize, command] = (0, stringUtil_1.splitAt)(commandContent, 8);
@@ -52,10 +52,8 @@ function parseCodec12(hexStr) {
       isResponse: type === "06",
       command: (0, stringUtil_1.hexToAscII)(command),
     };
-  } else {
-    console.log(`GPRS PARSE ERROR: Not implemented`);
   }
-}
+};
 
 // Use functions from the examples provided below:
 
