@@ -29,32 +29,36 @@ exports.parseCodec12 = function (hexStr) {
   if (!hexStr) {
     return;
   }
-  let [preamble, content, crc] = (0, stringUtil_1.splitAt)(hexStr, 8, -8);
-  if (preamble !== "".padStart(8, "0"))
-    console.log(`GPRS PARSE ERROR: Invalid preamble.`);
-  let [dataSize, data] = (0, stringUtil_1.splitAt)(content, 8);
-  if (parseInt(dataSize, 16) !== data.length / 2)
-    console.log(
-      `GPRS PARSE ERROR: Data size doesn't match with the actual data size.`
-    );
-  //   let calculatedCRC = calcCRC16(data);
-  //   if (crc !== calculatedCRC) console.log(`GPRS PARSE ERROR: CRCs don't match.`);
-  let [codec, quantity1, type, commandContent, quantity2] = (0,
-  stringUtil_1.splitAt)(data, 2, 2, 2, -2);
-  if (quantity1 !== quantity2)
-    console.log(`GPRS PARSE ERROR: Command quantity did not match.`);
-  if (codec == "0C" || codec == "0c") {
-    if (!["05", "06"].includes(type))
-      console.log(`GPRS PARSE ERROR: Invalid type.`);
-    let [commandSize, command] = (0, stringUtil_1.splitAt)(commandContent, 8);
-    if (parseInt(commandSize, 16) !== command.length / 2)
+  try {
+    let [preamble, content, crc] = (0, stringUtil_1.splitAt)(hexStr, 8, -8);
+    if (preamble !== "".padStart(8, "0"))
+      console.log(`GPRS PARSE ERROR: Invalid preamble.`);
+    let [dataSize, data] = (0, stringUtil_1.splitAt)(content, 8);
+    if (parseInt(dataSize, 16) !== data.length / 2)
       console.log(
-        `GPRS PARSE ERROR: Command/Response size doesn't match with the actual size.`
+        `GPRS PARSE ERROR: Data size doesn't match with the actual data size.`
       );
-    return {
-      isResponse: type === "06",
-      command: (0, stringUtil_1.hexToAscII)(command),
-    };
+    //   let calculatedCRC = calcCRC16(data);
+    //   if (crc !== calculatedCRC) console.log(`GPRS PARSE ERROR: CRCs don't match.`);
+    let [codec, quantity1, type, commandContent, quantity2] = (0,
+    stringUtil_1.splitAt)(data, 2, 2, 2, -2);
+    if (quantity1 !== quantity2)
+      console.log(`GPRS PARSE ERROR: Command quantity did not match.`);
+    if (codec == "0C" || codec == "0c") {
+      if (!["05", "06"].includes(type))
+        console.log(`GPRS PARSE ERROR: Invalid type.`);
+      let [commandSize, command] = (0, stringUtil_1.splitAt)(commandContent, 8);
+      if (parseInt(commandSize, 16) !== command.length / 2)
+        console.log(
+          `GPRS PARSE ERROR: Command/Response size doesn't match with the actual size.`
+        );
+      return {
+        isResponse: type === "06",
+        command: (0, stringUtil_1.hexToAscII)(command),
+      };
+    }
+  } catch (e) {
+    console.log("Error caught in parsing codec12", e);
   }
 };
 
