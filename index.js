@@ -33,31 +33,38 @@ const PARSER_PORT = 1101;
 async function main() {
   const redisClient = await redisConnectionHelper();
 
+  const io = new Server({
+    cors: {
+      origin: "*",
+    },
+  });
+
   function createSocketLog(logData, response) {
     // Disabling it for now because it generates too many logs for us to handle.
     if (process.env.MONGO_LOG_SAVE == "true") {
       try {
+        io.emit("logs", { ...logData, response });
         // logsParserModel.create({ ...logData, response });
-        const data = JSON.stringify({ ...logData, response });
-        const API_CONFIG_LOGS = {
-          method: "post",
-          maxBodyLength: Infinity,
-          url: process.env.LOGS_URL,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          data: data,
-        };
-        try {
-          //sends the data, don't listen to any response.
-          axios.request(API_CONFIG_LOGS).catch((er) => {
-            if (process.env.SHOW_CONSOLE_LOG == "true") {
-              console.log("Error creating MongoDB Log");
-            }
-          });
-        } catch (e) {
-          console.log("storing log error", e);
-        }
+        // const data = JSON.stringify({ ...logData, response });
+        // const API_CONFIG_LOGS = {
+        //   method: "post",
+        //   maxBodyLength: Infinity,
+        //   url: process.env.LOGS_URL,
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   data: data,
+        // };
+        // try {
+        //   //sends the data, don't listen to any response.
+        //   axios.request(API_CONFIG_LOGS).catch((er) => {
+        //     if (process.env.SHOW_CONSOLE_LOG == "true") {
+        //       console.log("Error creating MongoDB Log");
+        //     }
+        //   });
+        // } catch (e) {
+        //   console.log("storing log error", e);
+        // }
       } catch (e) {
         console.log("error creating log", e);
       }
@@ -68,12 +75,6 @@ async function main() {
       }
     }
   }
-
-  const io = new Server({
-    cors: {
-      origin: "*",
-    },
-  });
 
   const folder = path.join(__dirname, "ssl");
   const privateKey = fs.readFileSync(
@@ -446,7 +447,7 @@ async function main() {
           logData = { payloadSocket: payloadSocket };
           let redisClinetIdData;
           // Implement socket here to send `avl_record` after being parsed.
-          // io.emit("avl_record", payloadSocket);
+          io.emit("avl_record", payloadSocket);
 
           if (process.env.SEND_DATA_TO_PARSER_PROCESSOR == "true") {
             try {
