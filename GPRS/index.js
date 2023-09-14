@@ -26,6 +26,9 @@ exports.generateCodec12 = function (command) {
 };
 
 exports.parseCodec12 = function (hexStr) {
+  if (!hexStr) {
+    return;
+  }
   let [preamble, content, crc] = (0, stringUtil_1.splitAt)(hexStr, 8, -8);
   if (preamble !== "".padStart(8, "0"))
     console.log(`GPRS PARSE ERROR: Invalid preamble.`);
