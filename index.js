@@ -168,6 +168,9 @@ async function main() {
 
     async function parseGPRS(buffer, IMEI) {
       const hexa = buffer?.toString("hex");
+      if (!hexa) {
+        return;
+      }
       const parsedCodec12 = GPRS.parseCodec12(hexa);
       if (parsedCodec12?.command) {
         gprsModel.create({
