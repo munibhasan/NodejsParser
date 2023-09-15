@@ -450,7 +450,7 @@ async function main() {
           logData = { payloadSocket: payloadSocket };
           let redisClinetIdData;
           // Implement socket here to send `avl_record` after being parsed.
-          io.emit("avl_record", payloadSocket);
+          // io.emit("avl_record", payloadSocket);
 
           if (process.env.SEND_DATA_TO_PARSER_PROCESSOR == "true") {
             try {

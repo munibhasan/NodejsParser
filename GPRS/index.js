@@ -58,7 +58,7 @@ exports.parseCodec12 = function (hexStr) {
       };
     }
   } catch (e) {
-    console.log("Error caught in parsing codec12", e);
+    //This is run when the provided hexa is not of codec12. Not logging anything here to keep things clean.
   }
 };
 
