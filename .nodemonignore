@@ -1,0 +1,8 @@
+{
+    "ignore": [
+        "*.gz",
+        "*.json",
+        "./files/*.json",
+        "./files/*.gz"
+    ]
+}

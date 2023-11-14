@@ -30,6 +30,7 @@ const connectWithRetryDev = () => {
   // const uri = "mongodb://127.0.0.1:27017/VtrackV1_Local?retryWrites=true&w=majority";
   const uri =
     "mongodb+srv://DevWrapper:nuLxZCq6XRiKL8p3@vtracksolutions.nih4b.mongodb.net/Dev_VtrackV1?retryWrites=true&w=majority";
+
   mongoose
     .connect(uri, options)
     .then(() => {

@@ -86,7 +86,7 @@ const Client = mongoose.model("Clients", clientSchema);
 exports.model = mongoose.model("Clients", clientSchema);
 
 exports.findById = (id) => {
-  return client.findById(id).then((result) => {
+  return Client.findById(id).then((result) => {
     result = result.toJSON();
     delete result._id;
     delete result.__v;
