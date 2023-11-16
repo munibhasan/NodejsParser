@@ -6,8 +6,8 @@ async function fetchLocationData(latitude, longitude) {
   // if (redisCoordinates) {
   //   return JSON.parse(redisCoordinates);
   // }
-  const nominatimBaseUrl = "https://nominatim.openstreetmap.org/reverse";
-  const urlParameters = `?lat=${latitude}&lon=${longitude}&zoom=19&format=jsonv2&accept-language=en`;
+  const nominatimBaseUrl = "https://nominatim.openstreetmap.org/reverse.php";
+  const urlParameters = `?lat=${latitude}&lon=${longitude}&zoom=19&format=jsonv2`;
 
   try {
     const response = await axios.get(nominatimBaseUrl + urlParameters);
@@ -24,4 +24,4 @@ async function fetchLocationData(latitude, longitude) {
   }
 }
 
-export default fetchLocationData;
+exports.fetchLocationData = fetchLocationData;

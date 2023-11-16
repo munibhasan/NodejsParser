@@ -18,6 +18,7 @@ const certificate = fs.readFileSync(
 var momentTz = require("moment-timezone");
 const moment = require("moment");
 moment.suppressDeprecationWarnings = true;
+
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3({
   Bucket: process.env.Bucket,
@@ -33,7 +34,7 @@ const s3 = new AWS.S3({
 const vehicleImport = require("../Modules/Vehicles/model/vehicle.model");
 
 const zlib = require("zlib");
-const { Console } = require("console");
+
 const vehicleModel = vehicleImport.model;
 
 // const client = new MongoClient(
@@ -54,17 +55,17 @@ const optSsl = {
 
 const WEB_SERVER = server.createServer(optSsl);
 
-async function saveDataInS3(folderName, objectName, objectBody) {
+async function saveDataInS3(folderName, objectBody) {
   try {
     const putObjectRequest = {
       Bucket: process.env.Bucket,
-      Key: `${folderName}/${objectName}`,
+      Key: `${folderName}`,
       Body: objectBody,
+      ContentEncoding: "gzip",
+      ContentType: "application/gzip",
     };
 
-    const uploadPromise = s3.putObject(putObjectRequest).promise();
-
-    await uploadPromise;
+    const uploadPromise = await s3.upload(putObjectRequest).promise();
 
     return { status: true };
   } catch (err) {
@@ -76,6 +77,7 @@ const groupByVehicleReg = (data) => {
   const groups = {};
 
   for (const item of data) {
+    delete item.date;
     const vehicleReg = item.vehicleReg;
 
     if (!groups[vehicleReg]) {
@@ -87,79 +89,124 @@ const groupByVehicleReg = (data) => {
 
   return groups;
 };
+
 async function getDataFromMongoAndSavetoS3(timeZone) {
   try {
     const fromDate = moment(
       momentTz(new Date())
         .tz(timeZone)
-        // .subtract(1, "days")
+        .subtract(1, "days")
         .startOf("day")
         .toString()
     ).format("YYYY-MM-DDT00:00:00");
+
     const toDate = moment(
       momentTz(new Date())
         .tz(timeZone)
-        // .subtract(1, "days")
+        .subtract(1, "days")
         .startOf("day")
         .toString()
     ).format("YYYY-MM-DDT23:59:59");
-    // (
-    //   await clientModel.find({
-    //     timeZone,
-    //   })
-    // )
-    [...redisClient.get("clientList")].map((client) => {
+
+    // [...redisClient.get("clientList")]
+    (
+      await clientModel.find({
+        timeZone,
+      })
+    ).map((client) => {
       const collectionName = `avl_${client._id}_today`;
 
       mongoose.connection.db
         .collection(collectionName)
         .aggregate([
           {
-            $match: {
-              DateTime: { $gte: new Date(fromDate), $lte: new Date(toDate) },
+            $project: {
+              date: {
+                $dateToString: {
+                  date: "$DateTime",
+                  timezone: timeZone,
+                },
+              },
+              clientId: 1,
+              vehicleReg: 1,
+              deviceIMEI: 1,
+              DriverName: 1,
+              GpsElement: 1,
+              IoElement: 1,
+              OsmElement: 1,
+              GpsElement: 1,
+              Priority: 1,
+              DateTime: 1,
+              ServerDateTime: 1,
+              DateTimeDevice: 1,
             },
           },
           {
-            $sort: { DateTime: -1 },
+            $match: {
+              date: { $gte: fromDate, $lte: toDate },
+            },
+          },
+
+          {
+            $sort: { date: -1 },
           },
         ])
         .toArray()
         .then(async (d) => {
           const data = groupByVehicleReg(d);
           const keys = Object.keys(data);
-          const date = momentTz(new Date()).tz(timeZone).format("YYYY-MM-DD");
-          keys.map((item) => {
-            const jsonStringdata = JSON.stringify(data[item]);
-            const filePath = `./files/${date}.json`;
-            const gzippedFilePath = `./files/${date}.gz`;
-            const gzipStream = zlib.createGzip();
-            fs.writeFileSync(filePath, jsonStringdata, "utf8");
-            const source = fs.createReadStream(filePath);
-            const writeStream = fs.createWriteStream(gzippedFilePath);
-            source.pipe(gzipStream).pipe(writeStream);
-            writeStream.on("finish", () => {
-              const temp = saveDataInS3(
-                `${client._id}/${item}/${date}.gz`,
-                `${date}.gz`,
-                source
-              );
-              if (temp.status) {
-                fs.unlinkSync(filePath);
-                fs.unlinkSync(gzippedFilePath);
-              }
-            });
+
+          const date = momentTz(new Date(d.DateTimeDevice))
+            .tz(timeZone)
+            .format("YYYY-MM-DD");
+          keys.map(async (item) => {
+            // const jsonStringdata = JSON.stringify(data[item]);
+            const compressedData = zlib.gzipSync(JSON.stringify(data[item]));
+            await saveDataInS3(
+              `${client._id}/${item}/${date}.gz`,
+              compressedData
+            );
           });
         });
     });
-    console.log("======== task done==============");
   } catch (err) {
     console.log(err.message);
   }
 }
+// const dateObject = momentTz(
+//   "November 16 2023 02:54:56 AM",
+//   "MMMM DD YYYY hh:mm:ss A",
+//   "America/Winnipeg"
+// );
+// const utcDate = dateObject.utc();
+// console.log(utcDate.format("YYYY-MM-DDTHH:mm:ss"));
 
 async function main() {
-  const redisClient = await redisConnectionHelper();
+  // const redisClient = await redisConnectionHelper();
+  cron.schedule("0 */30 * * *", async () => {
+    try {
+      (
+        await clientModel.find({
+          timeZone,
+        })
+      ).map((client) => {
+        const collectionName = `avl_${client._id}_today`;
 
+        mongoose.connection.db
+          .collection(collectionName)
+          .find({ OsmElement: null })
+          .toArray()
+          .then(async (d) => {
+            const osmElements = await fetchLocationData(
+              d.gps.latitude,
+              d.gps.longitude
+            );
+          });
+      });
+    } catch (err) {
+      console.log(err.message);
+    }
+  });
   cron.schedule(
     "0 0 * * *",
     async () => {
@@ -199,7 +246,8 @@ async function main() {
   );
 }
 // TODO: redis connection and check the Schedular
-// main();
+
+main();
 // TODO: job runs at every 30 minutes get data from backup and send data to respective folder in S3
 
 WEB_SERVER.listen(9000, (err) => {
