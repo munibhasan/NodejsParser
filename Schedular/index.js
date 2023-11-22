@@ -147,9 +147,7 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
         console.log(err.message);
       }
     });
-  } catch (err) {
-    console.log(err.message);
-  }
+  } catch (err) {}
 }
 
 async function main() {
@@ -230,6 +228,7 @@ async function main() {
 
   cron.schedule(
     "0 0 * * *",
+
     async () => {
       getDataFromMongoAndSavetoS3("America/Winnipeg");
     },
