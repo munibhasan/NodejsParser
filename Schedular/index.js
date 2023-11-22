@@ -16,6 +16,7 @@ const certificate = fs.readFileSync(
 var momentTz = require("moment-timezone");
 const moment = require("moment");
 moment.suppressDeprecationWarnings = true;
+
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3({
   Bucket: process.env.Bucket,
@@ -143,6 +144,13 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
     });
   } catch (err) {}
 }
+// const dateObject = momentTz(
+//   "November 16 2023 02:54:56 AM",
+//   "MMMM DD YYYY hh:mm:ss A",
+//   "America/Winnipeg"
+// );
+// const utcDate = dateObject.utc();
+// console.log(utcDate.format("YYYY-MM-DDTHH:mm:ss"));
 
 async function main() {
   // const redisClient = await redisConnectionHelper();
