@@ -1,3 +1,4 @@
+const axios = require("axios");
 async function fetchLocationData(latitude, longitude) {
   // REDIS FUNCTIONALITY TO STORE LATITUDE AND LONGITUDE HAS BEEN DISABLED.
 
@@ -6,11 +7,12 @@ async function fetchLocationData(latitude, longitude) {
   // if (redisCoordinates) {
   //   return JSON.parse(redisCoordinates);
   // }
-  const nominatimBaseUrl = "https://nominatim.openstreetmap.org/reverse";
-  const urlParameters = `?lat=${latitude}&lon=${longitude}&zoom=19&format=jsonv2&accept-language=en`;
+  const nominatimBaseUrl = "https://eurosofttechosm.com/nominatim/reverse.php";
+  const urlParameters = `?lat=${latitude}&lon=${longitude}&zoom=19&format=jsonv2`;
 
   try {
     const response = await axios.get(nominatimBaseUrl + urlParameters);
+
     if (response.status === 200) {
       // Expire it in 10 days: EX: 60 * 60 * 24 seconds = 1 day * 10 = 10 days.
       // redisClient.set(coordinatesStr, JSON.stringify(response.data), {
@@ -24,4 +26,4 @@ async function fetchLocationData(latitude, longitude) {
   }
 }
 
-export default fetchLocationData;
+exports.fetchLocationData = fetchLocationData;

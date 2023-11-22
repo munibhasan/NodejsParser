@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
-    "server1": "node ./Schedular/index.js",
-    "server2": "node index.js",
+    "server1": "nodemon ./Schedular/index.js",
+    "server2": "nodemon index.js",
     "start": "concurrently \"nodemon ./Schedular/index.js\" \"nodemon index.js\" "
   },
   "author": "",
@@ -26,6 +26,7 @@
     "mongoose": "^7.4.3",
     "node-cron": "^3.0.3",
     "node-gzip": "^1.1.2",
+    "nodemon": "^3.0.1",
     "redis": "^4.6.7",
     "socket.io": "^4.7.2",
     "teltonika-parser-ex": "^0.0.16",

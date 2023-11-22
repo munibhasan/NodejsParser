@@ -1,16 +1,14 @@
 require("dotenv").config();
-
 const server = require("https");
 const path = require("path");
 const fs = require("fs");
 const cron = require("node-cron");
 const clientImport = require("../Modules/Clients/model/client.model");
 const { mongoose } = require("../utils/mongoose.service");
-const redisConnectionHelper = require("../utils/redisConnectionHelper");
-
-// const MongoClient = require("mongodb").MongoClient;
 const folder = path.join(__dirname, "../ssl");
 const privateKey = fs.readFileSync(path.join(folder, "server_key.pem"), "utf8");
+var ObjectId = require("mongodb").ObjectId;
+
 const certificate = fs.readFileSync(
   path.join(folder, "server_cert.pem"),
   "utf8"
@@ -24,26 +22,9 @@ const s3 = new AWS.S3({
   accessKeyId: process.env.IAM_USER_KEY,
   secretAccessKey: process.env.IAM_USER_SECRET,
 });
-
-// const s2 = new AWS.S3({
-//   Bucket: process.env.Bucket2, //live bucket in which data store
-//   accessKeyId: process.env.IAM_USER_KEY,
-//   secretAccessKey: process.env.IAM_USER_SECRET,
-// });
-const vehicleImport = require("../Modules/Vehicles/model/vehicle.model");
-
 const zlib = require("zlib");
-const { Console } = require("console");
-const vehicleModel = vehicleImport.model;
-
-// const client = new MongoClient(
-//   "mongodb+srv://Wrapper:D2zQcgJvtnKS4Jkr@vtracksolutions.nih4b.mongodb.net/VtrackV1?retryWrites=true&w=majority"
-// );
-// client.connect();
-// const db = client.db("VtrackV1");
-
+const { fetchLocationData } = require("../utils/fetchLocationData");
 const clientModel = clientImport.model;
-
 const optSsl = {
   key: privateKey,
   cert: certificate,
@@ -51,115 +32,166 @@ const optSsl = {
   requestCert: false, // put true if you want a client certificate, tested and it works
   rejectUnauthorized: false,
 };
-
 const WEB_SERVER = server.createServer(optSsl);
 
-async function saveDataInS3(folderName, objectName, objectBody) {
+async function saveDataInS3(folderName, objectBody) {
   try {
     const putObjectRequest = {
       Bucket: process.env.Bucket,
-      Key: `${folderName}/${objectName}`,
+      Key: `${folderName}`,
       Body: objectBody,
+      ContentEncoding: "gzip",
+      ContentType: "application/gzip",
     };
-
-    const uploadPromise = s3.putObject(putObjectRequest).promise();
-
-    await uploadPromise;
-
+    await s3.upload(putObjectRequest).promise();
     return { status: true };
   } catch (err) {
     return { status: false, message: err.message };
   }
 }
-
 const groupByVehicleReg = (data) => {
   const groups = {};
-
   for (const item of data) {
+    delete item.date;
     const vehicleReg = item.vehicleReg;
-
     if (!groups[vehicleReg]) {
       groups[vehicleReg] = [];
     }
-
     groups[vehicleReg].push(item);
   }
-
   return groups;
 };
+
 async function getDataFromMongoAndSavetoS3(timeZone) {
   try {
     const fromDate = moment(
       momentTz(new Date())
         .tz(timeZone)
-        // .subtract(1, "days")
+        .subtract(1, "days")
         .startOf("day")
         .toString()
     ).format("YYYY-MM-DDT00:00:00");
+
     const toDate = moment(
       momentTz(new Date())
         .tz(timeZone)
-        // .subtract(1, "days")
+        .subtract(1, "days")
         .startOf("day")
         .toString()
     ).format("YYYY-MM-DDT23:59:59");
-    // (
-    //   await clientModel.find({
-    //     timeZone,
-    //   })
-    // )
-    [...redisClient.get("clientList")].map((client) => {
+    // [...redisClient.get("clientList")]
+    (
+      await clientModel.find({
+        timeZone,
+      })
+    ).map((client) => {
       const collectionName = `avl_${client._id}_today`;
-
       mongoose.connection.db
         .collection(collectionName)
         .aggregate([
           {
-            $match: {
-              DateTime: { $gte: new Date(fromDate), $lte: new Date(toDate) },
+            $project: {
+              date: {
+                $dateToString: {
+                  date: "$DateTime",
+                  timezone: timeZone,
+                },
+              },
+              clientId: 1,
+              vehicleReg: 1,
+              deviceIMEI: 1,
+              DriverName: 1,
+              GpsElement: 1,
+              IoElement: 1,
+              OsmElement: 1,
+              GpsElement: 1,
+              Priority: 1,
+              DateTime: 1,
+              ServerDateTime: 1,
+              DateTimeDevice: 1,
             },
           },
           {
-            $sort: { DateTime: -1 },
+            $match: {
+              date: { $gte: fromDate, $lte: toDate },
+            },
           },
+
+          // {
+          //   $sort: { _id: -1 },
+          // },
         ])
         .toArray()
         .then(async (d) => {
+          const date = fromDate.split("T")[0];
           const data = groupByVehicleReg(d);
           const keys = Object.keys(data);
-          const date = momentTz(new Date()).tz(timeZone).format("YYYY-MM-DD");
-          keys.map((item) => {
-            const jsonStringdata = JSON.stringify(data[item]);
-            const filePath = `./files/${date}.json`;
-            const gzippedFilePath = `./files/${date}.gz`;
-            const gzipStream = zlib.createGzip();
-            fs.writeFileSync(filePath, jsonStringdata, "utf8");
-            const source = fs.createReadStream(filePath);
-            const writeStream = fs.createWriteStream(gzippedFilePath);
-            source.pipe(gzipStream).pipe(writeStream);
-            writeStream.on("finish", () => {
-              const temp = saveDataInS3(
-                `${client._id}/${item}/${date}.gz`,
-                `${date}.gz`,
-                source
-              );
-              if (temp.status) {
-                fs.unlinkSync(filePath);
-                fs.unlinkSync(gzippedFilePath);
-              }
-            });
+          keys.map(async (item) => {
+            const compressedData = zlib.gzipSync(JSON.stringify(data[item]));
+            await saveDataInS3(
+              `${client._id}/${item}/${date}.gzip`,
+              compressedData
+            );
           });
+          const dataIds = d.map((it) => {
+            return it._id;
+          });
+          mongoose.connection.db
+            .collection(collectionName)
+            .deleteMany({ _id: { $in: dataIds } });
         });
     });
-    console.log("======== task done==============");
-  } catch (err) {
-    console.log(err.message);
-  }
+  } catch (err) {}
 }
 
 async function main() {
-  const redisClient = await redisConnectionHelper();
+  // const redisClient = await redisConnectionHelper();
+  cron.schedule("*/30 * * * *", async () => {
+    try {
+      (await clientModel.find({})).map(async (client) => {
+        const collectionName = `avl_${client._id}_today`;
+        const collectionData = await mongoose.connection.db
+          .collection(collectionName)
+          .aggregate([
+            {
+              $match: {
+                OsmElement: null,
+              },
+            },
+          ])
+          .toArray();
 
+        const locationDataPromises = collectionData.map(async (document) => {
+          try {
+            const osmElements = await fetchLocationData(
+              document.GpsElement.Y,
+              document.GpsElement.X
+            );
+
+            return { _id: document._id, OsmElement: osmElements };
+          } catch (fetchError) {
+            return null; // or handle this case appropriately
+          }
+        });
+        const locationData = await Promise.all(locationDataPromises);
+
+        const updatePromises = locationData
+          .filter((data) => data !== null)
+          .map(async (location) => {
+            try {
+              await mongoose.connection.db
+                .collection(collectionName)
+                .findOneAndUpdate(
+                  { _id: location._id },
+                  { $set: { OsmElement: location.OsmElement } }
+                );
+            } catch (err) {}
+          });
+
+        await Promise.all(updatePromises);
+      });
+    } catch (err) {}
+  });
   cron.schedule(
     "0 0 * * *",
     async () => {
@@ -170,7 +202,7 @@ async function main() {
     }
   );
   cron.schedule(
-    "* * * * * *",
+    "0 0 * * *",
     async () => {
       getDataFromMongoAndSavetoS3("Asia/Karachi");
     },
@@ -190,6 +222,7 @@ async function main() {
 
   cron.schedule(
     "0 0 * * *",
+
     async () => {
       getDataFromMongoAndSavetoS3("America/Winnipeg");
     },
@@ -199,7 +232,8 @@ async function main() {
   );
 }
 // TODO: redis connection and check the Schedular
-// main();
+
+main();
 // TODO: job runs at every 30 minutes get data from backup and send data to respective folder in S3
 
 WEB_SERVER.listen(9000, (err) => {

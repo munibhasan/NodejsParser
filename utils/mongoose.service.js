@@ -7,7 +7,7 @@ const options = {
 };
 
 const connectWithRetry = () => {
-  console.log("MongoDB for Productions connection with retry");
+  console.log("MongoDB for Production connection with retry");
   const uri =
     "mongodb+srv://Wrapper:D2zQcgJvtnKS4Jkr@vtracksolutions.nih4b.mongodb.net/VtrackV1?retryWrites=true&w=majority";
   mongoose

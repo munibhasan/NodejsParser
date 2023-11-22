@@ -22,6 +22,7 @@ const cors = require("cors");
 const express = require("express");
 // const { mongo } = require("mongoose");
 const { mongoose } = require("./utils/mongoose.service");
+const { fetchLocationData } = require("./utils/fetchLocationData");
 // const deviceAssignModel = deviceAssignImport.model;
 // const vehicleModel = vehicleImport.model;
 // const clientModel = clientImport.model;
@@ -52,6 +53,11 @@ app.use(
     origin: "*",
   })
 );
+// app.use(bodyParser.json({ limit: "100mb" }));
+app.use(express.json());
+// app.get("/", (req, res) => {
+//   res.send("Wellcome to nodejs parser");
+// });
 
 app.get("/", async (req, res) => {
   try {
@@ -84,8 +90,25 @@ app.post("/data", async (req, res) => {
       Priority,
       timestamp,
       ioElements,
+      DateTimeDevice,
+      eventId,
     } = req.body;
+
     const osmElements = await fetchLocationData(gps.latitude, gps.longitude);
+
+    var date = new Date();
+    // date = new Date(
+    //   Date.UTC(
+    //     date.getFullYear(),
+    //     date.getMonth(),
+    //     date.getDate(),
+    //     date.getHours(),
+    //     date.getMinutes(),
+    //     date.getSeconds()
+    //   )
+    // );
+    const localDate = date.toLocaleDateString();
+    const localTime = date.toLocaleTimeString();
 
     const payloadMongo = {
       clientId,
@@ -93,31 +116,53 @@ app.post("/data", async (req, res) => {
       DriverName,
       deviceIMEI: IMEI,
       Priority: Priority,
-      DateTime: new Date(),
-      DateTimeDevice: timestamp,
-      gps: {
+      DateTime: new Date(timestamp),
+      DateTimeDevice,
+      ServerDateTime: localDate + " " + localTime,
+      GpsElement: {
         Y: gps?.latitude,
         X: gps?.longitude,
         Altitude: gps?.altitude,
         Angle: gps?.angle,
-        satellites: gps?.satellites,
-        speed: gps?.speed,
-        speedUnit: gps.speedUnit,
-        speedWithUnit: gps.speedWithUnit,
+        Satellites: gps?.satellites,
+        Speed: gps?.speed,
       },
-      OSM: osmElements,
-      IoElement: ioElements,
+      OsmElement: osmElements ? osmElements : null,
+      IoElement: {
+        EventId: eventId,
+        PropertiesCount: ioElements.length,
+        Properties: ioElements.map((item) => {
+          const { id, value } = item;
+          delete item.id;
+          delete item.value;
+          return {
+            _id: id,
+            Value: value,
+            ...item,
+          };
+        })
+        ,
+        OriginType: null,
+      },
     };
     const collectionName = `avl_${clientId}_today`;
-    // await mongoose.connection.db
-    //   .collection(collectionName)
-    //   .insertOne(payloadMongo);
-  } catch (err) {}
+    await mongoose.connection.db
+      .collection(collectionName)
+      .insertOne(payloadMongo);
+    // res.send(payloadMongo)
+  } catch (err) {
+    console.log(err.message);
+    // res.send()
+  }
 });
 const WEB_SERVER = server.createServer(optSsl, (req, res) => {
   app.handle(req, res);
 });
-WEB_SERVER.listen(1102);
+WEB_SERVER.listen(80, (err) => {
+  if (!err) {
+    console.log("server is running");
+  }
+});
 
 // async function main() {
 //   const redisClient = await redisConnectionHelper();
