@@ -4,10 +4,10 @@ let count = 0;
 const options = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  connectTimeoutMS: 5000,
 };
 
 const connectWithRetry = () => {
-  console.log("MongoDB for Productions connection with retry");
   const uri =
     "mongodb+srv://Wrapper:D2zQcgJvtnKS4Jkr@vtracksolutions.nih4b.mongodb.net/VtrackV1?retryWrites=true&w=majority";
   mongoose
@@ -26,7 +26,6 @@ const connectWithRetry = () => {
 
 // Development DevWrapp Database Connection
 const connectWithRetryDev = () => {
-  console.log("DevWrapper for devlopemnt MongoDB connection with retry");
   // const uri = "mongodb://127.0.0.1:27017/VtrackV1_Local?retryWrites=true&w=majority";
   const uri =
     "mongodb+srv://DevWrapper:nuLxZCq6XRiKL8p3@vtracksolutions.nih4b.mongodb.net/Dev_VtrackV1?retryWrites=true&w=majority";

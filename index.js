@@ -23,9 +23,6 @@ const express = require("express");
 // const { mongo } = require("mongoose");
 const { mongoose } = require("./utils/mongoose.service");
 const { fetchLocationData } = require("./utils/fetchLocationData");
-
-var momentTz = require("moment-timezone");
-
 // const deviceAssignModel = deviceAssignImport.model;
 // const vehicleModel = vehicleImport.model;
 // const clientModel = clientImport.model;
@@ -93,50 +90,68 @@ app.post("/data", async (req, res) => {
       Priority,
       timestamp,
       ioElements,
-      timeZone,
+      DateTimeDevice,
+      eventId,
     } = req.body;
 
-    // const osmElements = await fetchLocationData(gps.latitude, gps.longitude);
+    const osmElements = await fetchLocationData(gps.latitude, gps.longitude);
 
+    var date = new Date();
+    // date = new Date(
+    //   Date.UTC(
+    //     date.getFullYear(),
+    //     date.getMonth(),
+    //     date.getDate(),
+    //     date.getHours(),
+    //     date.getMinutes(),
+    //     date.getSeconds()
+    //   )
+    // );
     const localDate = date.toLocaleDateString();
     const localTime = date.toLocaleTimeString();
 
-    // momentTz(
-    //   "November 16 2023 09:32:15 AM",
-    //   "MMMM DD YYYY hh:mm:ss A",
-    //   "America/Winnipage"
-    // )
-    //   .utc()
-    //   .format("YYYY-MM-DDTHH:MM:ss");
     const payloadMongo = {
       clientId,
       vehicleReg,
       DriverName,
       deviceIMEI: IMEI,
       Priority: Priority,
-      DateTime: momentTz(timestamp, "MMMM DD YYYY hh:mm:ss A", timeZone)
-        .utc()
-        .format("YYYY-MM-DDTHH:MM:ss"),
-      DateTimeDevice: timestamp,
+      DateTime: new Date(timestamp),
+      DateTimeDevice,
       ServerDateTime: localDate + " " + localTime,
       GpsElement: {
         Y: gps?.latitude,
         X: gps?.longitude,
         Altitude: gps?.altitude,
         Angle: gps?.angle,
-        satellites: gps?.satellites,
-        speed: gps?.speed,
+        Satellites: gps?.satellites,
+        Speed: gps?.speed,
       },
-      OsmElement: null,
-      IoElement: ioElements,
+      OsmElement: osmElements ? osmElements : null,
+      IoElement: {
+        EventId: eventId,
+        PropertiesCount: ioElements.length,
+        Properties: ioElements.map((item) => {
+          const { id, value } = item;
+          delete item.id;
+          delete item.value;
+          return {
+            _id: id,
+            Value: value,
+            ...item,
+          };
+        }),
+        OriginType: null,
+      },
     };
     const collectionName = `avl_${clientId}_today`;
     await mongoose.connection.db
       .collection(collectionName)
       .insertOne(payloadMongo);
-    res.send(payloadMongo);
+    // res.send(payloadMongo)
   } catch (err) {
-    res.send();
+    console.log(err.message);
+    // res.send()
   }
 });
 const WEB_SERVER = server.createServer(optSsl, (req, res) => {
@@ -144,7 +159,7 @@ const WEB_SERVER = server.createServer(optSsl, (req, res) => {
 });
 WEB_SERVER.listen(80, (err) => {
   if (!err) {
-    console.log("server2 is running");
+    console.log("server is running");
   }
 });
 

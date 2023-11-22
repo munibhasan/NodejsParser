@@ -10,7 +10,7 @@
 
 # production
 package-lock.json
-
+/files
 # misc
 .DS_Store
 .env
