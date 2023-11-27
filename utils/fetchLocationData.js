@@ -18,6 +18,9 @@ async function fetchLocationData(latitude, longitude) {
       // redisClient.set(coordinatesStr, JSON.stringify(response.data), {
       //   EX: 60 * 60 * 24 * 10,
       // });
+      if (response.data.error) {
+        return null;
+      }
       return response.data;
     }
     throw new Error("Failed to fetch location data");
