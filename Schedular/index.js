@@ -8,6 +8,8 @@ const { mongoose } = require("../utils/mongoose.service");
 const folder = path.join(__dirname, "../ssl");
 const privateKey = fs.readFileSync(path.join(folder, "server_key.pem"), "utf8");
 var ObjectId = require("mongodb").ObjectId;
+const vehicleImport = require("../Modules/Vehicles/model/vehicle.model");
+const vehicleModel = vehicleImport.model;
 
 const certificate = fs.readFileSync(
   path.join(folder, "server_cert.pem"),
@@ -16,9 +18,10 @@ const certificate = fs.readFileSync(
 var momentTz = require("moment-timezone");
 const moment = require("moment");
 moment.suppressDeprecationWarnings = true;
+
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3({
-  Bucket: process.env.Bucket,
+  Bucket: process.env.Bucket2,
   accessKeyId: process.env.IAM_USER_KEY,
   secretAccessKey: process.env.IAM_USER_SECRET,
 });
@@ -37,7 +40,7 @@ const WEB_SERVER = server.createServer(optSsl);
 async function saveDataInS3(folderName, objectBody) {
   try {
     const putObjectRequest = {
-      Bucket: process.env.Bucket,
+      Bucket: process.env.Bucket2,
       Key: `${folderName}`,
       Body: objectBody,
       ContentEncoding: "gzip",
@@ -79,15 +82,15 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
         .startOf("day")
         .toString()
     ).format("YYYY-MM-DDT23:59:59");
-    // [...redisClient.get("clientList")]
     (
       await clientModel.find({
         timeZone,
       })
     ).map(async (client) => {
+      const vehicles = await vehicleModel.find({ clientId: client._id });
       const collectionName = `avl_${client._id}_today`;
-      try {
-        const data = await mongoose.connection.db
+      vehicles.map((item) => {
+        mongoose.connection.db
           .collection(collectionName)
           .aggregate([
             {
@@ -115,44 +118,32 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
             {
               $match: {
                 date: { $gte: fromDate, $lte: toDate },
+                vehicleReg: item.vehicleReg,
               },
             },
-
-            // {
-            //   $sort: { _id: -1 },
-            // },
           ])
-          .toArray();
-        console.log(data.length);
-        // .then(async (d) => {
-        //   console.log(d.length);
-        //   const date = fromDate.split("T")[0];
-        //   const data = groupByVehicleReg(d);
-        //   const keys = Object.keys(data);
-        //   keys.map(async (item) => {
-        //     const compressedData = zlib.gzipSync(JSON.stringify(data[item]));
-        //     await saveDataInS3(
-        //       `${client._id}/${item}/${date}.gzip`,
-        //       compressedData
-        //     );
-        //   });
-        //   const dataIds = d.map((it) => {
-        //     return it._id;
-        //   });
-        //   mongoose.connection.db
-        //     .collection(collectionName)
-        //     .deleteMany({ _id: { $in: dataIds } });
-        // });
-      } catch (err) {
-        console.log(err.message);
-      }
+          .toArray()
+          .then(async (d) => {
+            const date = fromDate.split("T")[0];
+            const compressedData = zlib.gzipSync(JSON.stringify(d));
+            await saveDataInS3(
+              `${client._id}/${item.vehicleReg}/${date}.gzip`,
+              compressedData
+            );
+            const dataIds = d.map((it) => {
+              return it._id;
+            });
+            mongoose.connection.db
+              .collection(collectionName)
+              .deleteMany({ _id: { $in: dataIds } });
+          });
+      });
     });
   } catch (err) {}
 }
 
 async function main() {
-  // const redisClient = await redisConnectionHelper();
-  cron.schedule("*/30  * * * *", async () => {
+  cron.schedule("*/30 * * * *", async () => {
     try {
       (await clientModel.find({})).map(async (client) => {
         const collectionName = `avl_${client._id}_today`;
@@ -237,11 +228,7 @@ async function main() {
     }
   );
 }
-// TODO: redis connection and check the Schedular
-
 main();
-// TODO: job runs at every 30 minutes get data from backup and send data to respective folder in S3
-
 WEB_SERVER.listen(9000, (err) => {
   if (!err) {
     console.log("server2 is running ");

@@ -148,6 +148,16 @@ app.post("/data", async (req, res) => {
     await mongoose.connection.db
       .collection(collectionName)
       .insertOne(payloadMongo);
+    // if(eventId==250 && ioElements.filter((item)=>{return item.id==250})[0].value==0){
+    //   // ignitionOff
+
+    //   const alreadysendsms = await
+
+    // }
+    // if(eventId==250 && ioElements.filter((item)=>{return item.id==250})[0].value==1){
+    //   // ignitionOn
+    // }
+
     // res.send(payloadMongo)
   } catch (err) {
     console.log(err.message);
