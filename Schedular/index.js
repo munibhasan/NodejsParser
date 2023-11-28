@@ -125,17 +125,19 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
           .toArray()
           .then(async (d) => {
             const date = fromDate.split("T")[0];
-            const compressedData = zlib.gzipSync(JSON.stringify(d));
-            await saveDataInS3(
-              `${client._id}/${item.vehicleReg}/${date}.gzip`,
-              compressedData
-            );
-            const dataIds = d.map((it) => {
-              return it._id;
-            });
-            mongoose.connection.db
-              .collection(collectionName)
-              .deleteMany({ _id: { $in: dataIds } });
+            if (d.length != 0) {
+              const compressedData = zlib.gzipSync(JSON.stringify(d));
+              await saveDataInS3(
+                `${client._id}/${item.vehicleReg}/${date}.gzip`,
+                compressedData
+              );
+              const dataIds = d.map((it) => {
+                return it._id;
+              });
+              mongoose.connection.db
+                .collection(collectionName)
+                .deleteMany({ _id: { $in: dataIds } });
+            }
           });
       });
     });
@@ -225,6 +227,16 @@ async function main() {
     },
     {
       timezone: "America/Winnipeg", //1
+    }
+  );
+  cron.schedule(
+    "0 0 * * *",
+
+    async () => {
+      getDataFromMongoAndSavetoS3("Europe/Paris");
+    },
+    {
+      timezone: "Europe/Paris", //1
     }
   );
 }
