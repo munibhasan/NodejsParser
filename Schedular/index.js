@@ -126,6 +126,7 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
           .then(async (d) => {
             const date = fromDate.split("T")[0];
             if (d.length != 0) {
+              console.log(item.vehicleReg, date);
               const compressedData = zlib.gzipSync(JSON.stringify(d));
               await saveDataInS3(
                 `${client._id}/${item.vehicleReg}/${date}.gzip`,
@@ -145,54 +146,58 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
 }
 
 async function main() {
-  cron.schedule("*/30 * * * *", async () => {
+  cron.schedule("*/10 * * * *", async () => {
     try {
       (await clientModel.find({})).map(async (client) => {
-        const collectionName = `avl_${client._id}_today`;
-        const collectionData = await mongoose.connection.db
-          .collection(collectionName)
-          .aggregate([
-            {
-              $match: {
-                OsmElement: null,
+        const vehicles = await vehicleModel.find({ clientId: client._id });
+        vehicles.map(async (item) => {
+          const collectionName = `avl_${client._id}_today`;
+          const collectionData = await mongoose.connection.db
+            .collection(collectionName)
+            .aggregate([
+              {
+                $match: {
+                  OsmElement: null,
+                  vehicleReg: item.vehicleReg,
+                },
               },
-            },
-          ])
-          .toArray();
+            ])
+            .toArray();
 
-        const locationDataPromises = collectionData.map(async (document) => {
-          try {
-            const osmElements = await fetchLocationData(
-              document.GpsElement.Y,
-              document.GpsElement.X
-            );
-
-            return { _id: document._id, OsmElement: osmElements };
-          } catch (fetchError) {
-            return null; // or handle this case appropriately
-          }
-        });
-        const locationData = await Promise.all(locationDataPromises);
-
-        const updatePromises = locationData
-          .filter((data) => data !== null)
-          .map(async (location) => {
+          const locationDataPromises = collectionData.map(async (document) => {
             try {
-              await mongoose.connection.db
-                .collection(collectionName)
-                .findOneAndUpdate(
-                  { _id: location._id },
-                  { $set: { OsmElement: location.OsmElement } }
-                );
-            } catch (err) {}
-          });
+              const osmElements = await fetchLocationData(
+                document.GpsElement.Y,
+                document.GpsElement.X
+              );
 
-        await Promise.all(updatePromises);
+              return { _id: document._id, OsmElement: osmElements };
+            } catch (fetchError) {
+              return null; // or handle this case appropriately
+            }
+          });
+          const locationData = await Promise.all(locationDataPromises);
+
+          const updatePromises = locationData
+            .filter((data) => data !== null)
+            .map(async (location) => {
+              try {
+                await mongoose.connection.db
+                  .collection(collectionName)
+                  .findOneAndUpdate(
+                    { _id: location._id },
+                    { $set: { OsmElement: location.OsmElement } }
+                  );
+              } catch (err) {}
+            });
+          await Promise.all(updatePromises);
+        });
       });
     } catch (err) {}
   });
   cron.schedule(
     "0 0 * * *",
+
     async () => {
       getDataFromMongoAndSavetoS3("Europe/London");
     },
