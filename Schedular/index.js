@@ -49,21 +49,22 @@ async function saveDataInS3(folderName, objectBody) {
     await s3.upload(putObjectRequest).promise();
     return { status: true };
   } catch (err) {
+    console.log(err);
     return { status: false, message: err.message };
   }
 }
-const groupByVehicleReg = (data) => {
-  const groups = {};
-  for (const item of data) {
-    delete item.date;
-    const vehicleReg = item.vehicleReg;
-    if (!groups[vehicleReg]) {
-      groups[vehicleReg] = [];
-    }
-    groups[vehicleReg].push(item);
-  }
-  return groups;
-};
+// const groupByVehicleReg = (data) => {
+//   const groups = {};
+//   for (const item of data) {
+//     delete item.date;
+//     const vehicleReg = item.vehicleReg;
+//     if (!groups[vehicleReg]) {
+//       groups[vehicleReg] = [];
+//     }
+//     groups[vehicleReg].push(item);
+//   }
+//   return groups;
+// };
 
 async function getDataFromMongoAndSavetoS3(timeZone) {
   try {
@@ -125,7 +126,7 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
           .toArray()
           .then(async (d) => {
             const date = fromDate.split("T")[0];
-            if (d.length != 0) {
+            if (d.length > 0) {
               console.log(item.vehicleReg, date);
               const compressedData = zlib.gzipSync(JSON.stringify(d));
               await saveDataInS3(
@@ -135,70 +136,84 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
               const dataIds = d.map((it) => {
                 return it._id;
               });
-              mongoose.connection.db
+              await mongoose.connection.db
                 .collection(collectionName)
                 .deleteMany({ _id: { $in: dataIds } });
             }
           });
       });
     });
-  } catch (err) {}
+  } catch (err) {
+    console.log(err, "1");
+  }
 }
 
 async function main() {
   cron.schedule("*/10 * * * *", async () => {
     try {
-      (await clientModel.find({})).map(async (client) => {
-        const vehicles = await vehicleModel.find({ clientId: client._id });
-        vehicles.map(async (item) => {
-          const collectionName = `avl_${client._id}_today`;
-          const collectionData = await mongoose.connection.db
-            .collection(collectionName)
-            .aggregate([
-              {
-                $match: {
-                  OsmElement: null,
-                  vehicleReg: item.vehicleReg,
+      console
+        .log("Schedular run for fetch the location ")(
+          await clientModel.find({
+            _id: { $ne: ObjectId("65575c79332051f73cb9a06b") },
+          })
+        )
+        .map(async (client) => {
+          const vehicles = await vehicleModel.find({ clientId: client._id });
+          vehicles.map(async (item) => {
+            const collectionName = `avl_${client._id}_today`;
+            const collectionData = await mongoose.connection.db
+              .collection(collectionName)
+              .aggregate([
+                {
+                  $match: {
+                    OsmElement: null,
+                    vehicleReg: item.vehicleReg,
+                  },
                 },
-              },
-            ])
-            .toArray();
+              ])
+              .toArray();
 
-          const locationDataPromises = collectionData.map(async (document) => {
-            try {
-              const osmElements = await fetchLocationData(
-                document.GpsElement.Y,
-                document.GpsElement.X
-              );
-
-              return { _id: document._id, OsmElement: osmElements };
-            } catch (fetchError) {
-              return null; // or handle this case appropriately
-            }
-          });
-          const locationData = await Promise.all(locationDataPromises);
-
-          const updatePromises = locationData
-            .filter((data) => data !== null)
-            .map(async (location) => {
-              try {
-                await mongoose.connection.db
-                  .collection(collectionName)
-                  .findOneAndUpdate(
-                    { _id: location._id },
-                    { $set: { OsmElement: location.OsmElement } }
+            const locationDataPromises = collectionData.map(
+              async (document) => {
+                try {
+                  const osmElements = await fetchLocationData(
+                    document.GpsElement.Y,
+                    document.GpsElement.X
                   );
-              } catch (err) {}
-            });
-          await Promise.all(updatePromises);
+
+                  return { _id: document._id, OsmElement: osmElements };
+                } catch (fetchError) {
+                  console.log("Error in fetch location", fetchError);
+                  return null; // or handle this case appropriately
+                }
+              }
+            );
+            const locationData = await Promise.all(locationDataPromises);
+
+            const updatePromises = locationData
+              .filter((data) => data !== null)
+              .map(async (location) => {
+                try {
+                  await mongoose.connection.db
+                    .collection(collectionName)
+                    .findOneAndUpdate(
+                      { _id: location._id },
+                      { $set: { OsmElement: location.OsmElement } }
+                    );
+                } catch (err) {
+                  console.log(err, "2");
+                }
+              });
+            await Promise.all(updatePromises);
+          });
         });
-      });
     } catch (err) {}
   });
   cron.schedule(
     "0 0 * * *",
 
     async () => {
+      console.log("Schedular run for the region of Europe/London");
       getDataFromMongoAndSavetoS3("Europe/London");
     },
     {
@@ -208,6 +223,8 @@ async function main() {
   cron.schedule(
     "0 0 * * *",
     async () => {
+      console.log("Schedular run for the region of Asia/Karachi");
+
       getDataFromMongoAndSavetoS3("Asia/Karachi");
     },
     {
@@ -217,6 +234,8 @@ async function main() {
   cron.schedule(
     "0 0 * * *",
     async () => {
+      console.log("Schedular run for the region of America/Halifax");
+
       getDataFromMongoAndSavetoS3("America/Halifax");
     },
     {
@@ -226,8 +245,9 @@ async function main() {
 
   cron.schedule(
     "0 0 * * *",
-
     async () => {
+      console.log("Schedular run for the region of America/Winnipeg");
+
       getDataFromMongoAndSavetoS3("America/Winnipeg");
     },
     {
@@ -236,8 +256,9 @@ async function main() {
   );
   cron.schedule(
     "0 0 * * *",
-
     async () => {
+      console.log("Schedular run for the region of Europe/Paris");
+
       getDataFromMongoAndSavetoS3("Europe/Paris");
     },
     {

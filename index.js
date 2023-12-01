@@ -93,8 +93,10 @@ app.post("/data", async (req, res) => {
       DateTimeDevice,
       eventId,
     } = req.body;
-
-    const osmElements = await fetchLocationData(gps.latitude, gps.longitude);
+    let osmElements = null;
+    if (clientId != "65575c79332051f73cb9a06b") {
+      osmElements = await fetchLocationData(gps.latitude, gps.longitude);
+    }
 
     var date = new Date();
     // date = new Date(
@@ -127,7 +129,7 @@ app.post("/data", async (req, res) => {
         Satellites: gps?.satellites,
         Speed: gps?.speed,
       },
-      OsmElement: osmElements ? osmElements : null,
+      OsmElement: osmElements != null ? osmElements : null,
       IoElement: {
         EventId: eventId,
         PropertiesCount: ioElements.length,
