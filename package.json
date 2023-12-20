@@ -30,6 +30,7 @@
     "redis": "^4.6.7",
     "socket.io": "^4.7.2",
     "teltonika-parser-ex": "^0.0.16",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "zlib": "^1.0.5"
   }
 }
