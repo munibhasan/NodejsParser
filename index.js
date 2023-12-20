@@ -121,7 +121,7 @@ app.post("/data", async (req, res) => {
       .insertOne(payloadMongo);
     fs.appendFile(
       "server.txt",
-      `Data inserted in collection: ${collectionName}`,
+      `Data inserted in collection: ${collectionName}\n`,
       (e, r) => {}
     );
 
@@ -134,7 +134,7 @@ app.post("/data", async (req, res) => {
     ) {
       fs.appendFile(
         "server.txt",
-        `ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} `,
+        `ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} \n`,
         (e, r) => {}
       );
       try {
@@ -156,7 +156,7 @@ app.post("/data", async (req, res) => {
       } catch (err) {
         fs.appendFile(
           "server.txt",
-          `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`,
+          `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
       }
@@ -170,7 +170,7 @@ app.post("/data", async (req, res) => {
     ) {
       fs.appendFile(
         "server.txt",
-        `ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} `,
+        `ignitionOn Event in vehicle: ${collectionName}/${vehicleReg}\n`,
         (e, r) => {}
       );
       try {
@@ -192,7 +192,7 @@ app.post("/data", async (req, res) => {
       } catch (err) {
         fs.appendFile(
           "server.txt",
-          `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`,
+          `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
         console.log(err.message);
@@ -208,7 +208,7 @@ app.post("/data", async (req, res) => {
     ) {
       fs.appendFile(
         "server.txt",
-        `Harshbreak Event in vehicle: ${collectionName}/${vehicleReg} `,
+        `Harshbreak Event in vehicle: ${collectionName}/${vehicleReg} \n`,
         (e, r) => {}
       );
       try {
@@ -230,7 +230,7 @@ app.post("/data", async (req, res) => {
       } catch (err) {
         fs.appendFile(
           "server.txt",
-          `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`,
+          `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
         console.log(err.message);
@@ -245,7 +245,7 @@ app.post("/data", async (req, res) => {
     ) {
       fs.appendFile(
         "server.txt",
-        `harshCornering Event in vehicle: ${collectionName}/${vehicleReg} `,
+        `harshCornering Event in vehicle: ${collectionName}/${vehicleReg} \n`,
         (e, r) => {}
       );
       try {
@@ -267,7 +267,7 @@ app.post("/data", async (req, res) => {
       } catch (err) {
         fs.appendFile(
           "server.txt",
-          `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`,
+          `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
         console.log(err.message);
@@ -282,7 +282,7 @@ app.post("/data", async (req, res) => {
     ) {
       fs.appendFile(
         "server.txt",
-        `harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} `,
+        `harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} \n`,
         (e, r) => {}
       );
       try {
@@ -304,7 +304,7 @@ app.post("/data", async (req, res) => {
       } catch (err) {
         fs.appendFile(
           "server.txt",
-          `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`,
+          `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
         console.log(err.message);
@@ -320,7 +320,7 @@ app.post("/data", async (req, res) => {
     ) {
       fs.appendFile(
         "server.txt",
-        `overspeed Event in vehicle: ${collectionName}/${vehicleReg} `,
+        `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
         (e, r) => {}
       );
       try {
@@ -342,7 +342,7 @@ app.post("/data", async (req, res) => {
       } catch (err) {
         fs.appendFile(
           "server.txt",
-          `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`,
+          `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
         console.log(err.message);
@@ -352,7 +352,7 @@ app.post("/data", async (req, res) => {
   } catch (err) {
     fs.appendFile(
       "server.txt",
-      `Error in insertion in collection: ${collectionName} is ${err.message}`,
+      `Error in insertion in collection: ${collectionName} is ${err.message}\n`,
       (e, r) => {}
     );
 
