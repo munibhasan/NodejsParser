@@ -50,7 +50,7 @@ async function saveDataInS3(folderName, objectBody) {
     return { status: true };
   } catch (err) {
     console.log(`${err.message}`);
-    fs.appendFile("Schedular.txt", `${err.message}\n`, (e, r) => {});
+    fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {});
 
     return { status: false, message: err.message };
   }
@@ -108,7 +108,7 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
       console.log(
         `data get form collection: ${collectionName} with date range of ${fromDate} to ${toDate}`
       );
-      fs.appendFile(
+      fs.appendFileSync(
         "Schedular.txt",
         `data get form collection: ${collectionName} with date range of ${fromDate} to ${toDate}\n`,
         (e, r) => {}
@@ -152,7 +152,7 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
             const date = fromDate.split("T")[0];
             if (d.length > 0) {
               console.log(`${item.vehicleReg}, ${date},${d.length}`);
-              fs.appendFile(
+              fs.appendFileSync(
                 "Schedular.txt",
                 `${item.vehicleReg}, ${date},${d.length}\n`,
                 (e, r) => {}
@@ -176,7 +176,7 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
     });
   } catch (err) {
     console.log(err.message);
-    fs.appendFile("Schedular.txt", `${err.message}\n`, (e, r) => {});
+    fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {});
   }
 }
 async function main() {
@@ -203,7 +203,7 @@ async function main() {
             ])
             .toArray();
           console.log(`${item.vehicleReg}, ${collectionData.length}`);
-          fs.appendFile(
+          fs.appendFileSync(
             "Schedular.txt",
             `${item.vehicleReg}, ${collectionData.length}\n`,
             (e, r) => {}
@@ -221,7 +221,7 @@ async function main() {
               console.log(
                 `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}`
               );
-              fs.appendFile(
+              fs.appendFileSync(
                 "Schedular.txt",
                 `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}\n`,
                 (e, r) => {}
@@ -244,7 +244,7 @@ async function main() {
                   );
               } catch (err) {
                 console.log(err.message);
-                fs.appendFile(
+                fs.appendFileSync(
                   "Schedular.txt",
                   `${err.message}\n`,
                   (e, r) => {}
@@ -261,7 +261,7 @@ async function main() {
     "15 0 * * *",
     async () => {
       console.log("Schedular run for the region of Europe/London");
-      fs.appendFile(
+      fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Europe/London\n",
         (e, r) => {}
@@ -278,7 +278,7 @@ async function main() {
     "15 0 * * *",
     async () => {
       console.log("Schedular run for the region of Asia/Karachi");
-      fs.appendFile(
+      fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Asia/Karachi\n",
         (e, r) => {}
@@ -295,7 +295,7 @@ async function main() {
     "15 0 * * *",
     async () => {
       console.log("Schedular run for the region of America/Halifax");
-      fs.appendFile(
+      fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of America/Halifax\n",
         (e, r) => {}
@@ -313,7 +313,7 @@ async function main() {
     async () => {
       console.log("Schedular run for the region of America/Winnipeg");
 
-      fs.appendFile(
+      fs.appendFileSync(
         "Schedular.txt",
         `Schedular run for the region of America/Winnipeg\n`,
         (e, r) => {}
@@ -330,7 +330,7 @@ async function main() {
     "15 0 * * *",
     async () => {
       console.log("Schedular run for the region of Europe/Paris");
-      fs.appendFile(
+      fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Europe/Paris\n",
         (e, r) => {}
@@ -346,6 +346,6 @@ async function main() {
 main();
 WEB_SERVER.listen(9000, (err) => {
   if (!err) {
-    console.log("server2 is running ");
+    console.log("Schedular(server2) is running ");
   }
 });
