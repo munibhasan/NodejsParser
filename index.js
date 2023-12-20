@@ -119,6 +119,7 @@ app.post("/data", async (req, res) => {
     await mongoose.connection.db
       .collection(collectionName)
       .insertOne(payloadMongo);
+    console.log(`Data inserted in collection: ${collectionName}`);
     fs.appendFile(
       "server.txt",
       `Data inserted in collection: ${collectionName}\n`,
@@ -132,6 +133,9 @@ app.post("/data", async (req, res) => {
         return item.id == 239;
       })[0]?.value == 0
     ) {
+      console.log(
+        `ignitionOff Event in vehicle: ${collectionName}/${vehicleReg}`
+      );
       fs.appendFile(
         "server.txt",
         `ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} \n`,
@@ -154,6 +158,9 @@ app.post("/data", async (req, res) => {
           }
         );
       } catch (err) {
+        console.log(
+          `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+        );
         fs.appendFile(
           "server.txt",
           `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
@@ -168,6 +175,9 @@ app.post("/data", async (req, res) => {
         return item.id == 239;
       })[0]?.value == 1
     ) {
+      console.log(
+        `ignitionOn Event in vehicle: ${collectionName}/${vehicleReg}`
+      );
       fs.appendFile(
         "server.txt",
         `ignitionOn Event in vehicle: ${collectionName}/${vehicleReg}\n`,
@@ -190,12 +200,14 @@ app.post("/data", async (req, res) => {
           }
         );
       } catch (err) {
+        console.log(
+          `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+        );
         fs.appendFile(
           "server.txt",
           `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
-        console.log(err.message);
       }
     }
 
@@ -206,6 +218,9 @@ app.post("/data", async (req, res) => {
         return item.id == 253;
       })[0]?.value == 2
     ) {
+      console.log(
+        `Harshbreak Event in vehicle: ${collectionName}/${vehicleReg}`
+      );
       fs.appendFile(
         "server.txt",
         `Harshbreak Event in vehicle: ${collectionName}/${vehicleReg} \n`,
@@ -228,12 +243,14 @@ app.post("/data", async (req, res) => {
           }
         );
       } catch (err) {
+        console.log(
+          `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+        );
         fs.appendFile(
           "server.txt",
           `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
-        console.log(err.message);
       }
     }
     //harshCornering
@@ -243,6 +260,9 @@ app.post("/data", async (req, res) => {
         return item.id == 253;
       })[0]?.value == 3
     ) {
+      console.log(
+        `harshCornering Event in vehicle: ${collectionName}/${vehicleReg}`
+      );
       fs.appendFile(
         "server.txt",
         `harshCornering Event in vehicle: ${collectionName}/${vehicleReg} \n`,
@@ -265,12 +285,14 @@ app.post("/data", async (req, res) => {
           }
         );
       } catch (err) {
+        console.log(
+          `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+        );
         fs.appendFile(
           "server.txt",
           `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
-        console.log(err.message);
       }
     }
     //harshAcceleration
@@ -280,6 +302,9 @@ app.post("/data", async (req, res) => {
         return item.id == 253;
       })[0]?.value == 1
     ) {
+      console.log(
+        `harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg}`
+      );
       fs.appendFile(
         "server.txt",
         `harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} \n`,
@@ -302,12 +327,14 @@ app.post("/data", async (req, res) => {
           }
         );
       } catch (err) {
+        console.log(
+          `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+        );
         fs.appendFile(
           "server.txt",
           `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
-        console.log(err.message);
       }
     }
 
@@ -318,6 +345,9 @@ app.post("/data", async (req, res) => {
         return item.id == 255;
       }).length > 0
     ) {
+      console.log(
+        `overspeed Event in vehicle: ${collectionName}/${vehicleReg}`
+      );
       fs.appendFile(
         "server.txt",
         `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
@@ -340,23 +370,27 @@ app.post("/data", async (req, res) => {
           }
         );
       } catch (err) {
+        console.log(
+          `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+        );
         fs.appendFile(
           "server.txt",
           `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
           (e, r) => {}
         );
-        console.log(err.message);
       }
     }
     // res.send(payloadMongo)
   } catch (err) {
+    console.log(
+      `Error in insertion in collection: ${collectionName} is ${err.message}`
+    );
     fs.appendFile(
       "server.txt",
       `Error in insertion in collection: ${collectionName} is ${err.message}\n`,
       (e, r) => {}
     );
 
-    console.log(err.message);
     // res.send()
   }
 });

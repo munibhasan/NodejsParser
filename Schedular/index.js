@@ -49,6 +49,7 @@ async function saveDataInS3(folderName, objectBody) {
     await s3.upload(putObjectRequest).promise();
     return { status: true };
   } catch (err) {
+    console.log(`${err.message}`);
     fs.appendFile("Schedular.txt", `${err.message}\n`, (e, r) => {});
 
     return { status: false, message: err.message };
@@ -104,6 +105,9 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
     ).map(async (client) => {
       const vehicles = await vehicleModel.find({ clientId: client._id });
       const collectionName = `avl_${client._id}_today`;
+      console.log(
+        `data get form collection: ${collectionName} with date range of ${fromDate} to ${toDate}`
+      );
       fs.appendFile(
         "Schedular.txt",
         `data get form collection: ${collectionName} with date range of ${fromDate} to ${toDate}\n`,
@@ -147,6 +151,7 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
           .then(async (d) => {
             const date = fromDate.split("T")[0];
             if (d.length > 0) {
+              console.log(`${item.vehicleReg}, ${date},${d.length}`);
               fs.appendFile(
                 "Schedular.txt",
                 `${item.vehicleReg}, ${date},${d.length}\n`,
@@ -170,6 +175,7 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
       });
     });
   } catch (err) {
+    console.log(err.message);
     fs.appendFile("Schedular.txt", `${err.message}\n`, (e, r) => {});
   }
 }
@@ -196,7 +202,7 @@ async function main() {
               }
             ])
             .toArray();
-
+          console.log(`${item.vehicleReg}, ${collectionData.length}`);
           fs.appendFile(
             "Schedular.txt",
             `${item.vehicleReg}, ${collectionData.length}\n`,
@@ -212,6 +218,9 @@ async function main() {
 
               return { _id: document._id, OsmElement: osmElements };
             } catch (fetchError) {
+              console.log(
+                `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}`
+              );
               fs.appendFile(
                 "Schedular.txt",
                 `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}\n`,
@@ -234,6 +243,7 @@ async function main() {
                     { $set: { OsmElement: location.OsmElement } }
                   );
               } catch (err) {
+                console.log(err.message);
                 fs.appendFile(
                   "Schedular.txt",
                   `${err.message}\n`,
@@ -250,6 +260,7 @@ async function main() {
   cron.schedule(
     "15 0 * * *",
     async () => {
+      console.log("Schedular run for the region of Europe/London");
       fs.appendFile(
         "Schedular.txt",
         "Schedular run for the region of Europe/London\n",
@@ -266,6 +277,7 @@ async function main() {
   cron.schedule(
     "15 0 * * *",
     async () => {
+      console.log("Schedular run for the region of Asia/Karachi");
       fs.appendFile(
         "Schedular.txt",
         "Schedular run for the region of Asia/Karachi\n",
@@ -282,6 +294,7 @@ async function main() {
   cron.schedule(
     "15 0 * * *",
     async () => {
+      console.log("Schedular run for the region of America/Halifax");
       fs.appendFile(
         "Schedular.txt",
         "Schedular run for the region of America/Halifax\n",
@@ -298,6 +311,8 @@ async function main() {
   cron.schedule(
     "15 0 * * *",
     async () => {
+      console.log("Schedular run for the region of America/Winnipeg");
+
       fs.appendFile(
         "Schedular.txt",
         `Schedular run for the region of America/Winnipeg\n`,
@@ -314,6 +329,7 @@ async function main() {
   cron.schedule(
     "15 0 * * *",
     async () => {
+      console.log("Schedular run for the region of Europe/Paris");
       fs.appendFile(
         "Schedular.txt",
         "Schedular run for the region of Europe/Paris\n",
