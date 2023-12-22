@@ -1,4 +1,5 @@
 require("dotenv").config();
+const https = require("https");
 const server = require("https");
 const path = require("path");
 const fs = require("fs");
@@ -30,6 +31,7 @@ app.use(
     origin: "*"
   })
 );
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 // app.use(bodyParser.json({ limit: "100mb" }));
 app.use(express.json());
 // app.get("/", (req, res) => {
@@ -152,6 +154,7 @@ app.post("/data", async (req, res) => {
             zonename: ""
           },
           {
+            httpsAgent,
             "Content-Type": "application/json"
           }
         );
@@ -194,6 +197,7 @@ app.post("/data", async (req, res) => {
             zonename: ""
           },
           {
+            httpsAgent,
             "Content-Type": "application/json"
           }
         );
@@ -237,6 +241,7 @@ app.post("/data", async (req, res) => {
             zonename: ""
           },
           {
+            httpsAgent,
             "Content-Type": "application/json"
           }
         );
@@ -279,6 +284,7 @@ app.post("/data", async (req, res) => {
             zonename: ""
           },
           {
+            httpsAgent,
             "Content-Type": "application/json"
           }
         );
@@ -321,6 +327,7 @@ app.post("/data", async (req, res) => {
             zonename: ""
           },
           {
+            httpsAgent,
             "Content-Type": "application/json"
           }
         );
@@ -364,6 +371,7 @@ app.post("/data", async (req, res) => {
             zonename: ""
           },
           {
+            httpsAgent,
             "Content-Type": "application/json"
           }
         );
@@ -392,6 +400,7 @@ app.post("/data", async (req, res) => {
     // res.send()
   }
 });
+
 const WEB_SERVER = server.createServer(optSsl, (req, res) => {
   app.handle(req, res);
 });
