@@ -102,13 +102,11 @@ app.post("/data", async (req, res) => {
         EventId: eventId,
         PropertiesCount: ioElements.length,
         Properties: ioElements.map((item) => {
-          const { id, value } = item;
-          delete item.id;
-          delete item.value;
           return {
-            _id: id,
-            Value: value,
-            ...item
+            _id: item.id,
+            Value: item.value,
+            label: item.label,
+            valueHuman: item.valueHuman
           };
         }),
         OriginType: null
