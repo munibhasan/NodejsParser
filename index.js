@@ -104,12 +104,22 @@ app.post("/data", async (req, res) => {
         EventId: eventId,
         PropertiesCount: ioElements.length,
         Properties: ioElements.map((item) => {
-          return {
-            _id: item.id,
-            Value: item.value,
-            label: item.label,
-            valueHuman: item.valueHuman
-          };
+          if (item.id == 78 && item.value != 0) {
+            return {
+              _id: item.id,
+              Value: item.value,
+              refValue: Number(item.value).toString(16).slice(-13),
+              label: item.label,
+              valueHuman: item.valueHuman
+            };
+          } else {
+            return {
+              _id: item.id,
+              Value: item.value,
+              label: item.label,
+              valueHuman: item.valueHuman
+            };
+          }
         }),
         OriginType: null
       }
