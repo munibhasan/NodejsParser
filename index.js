@@ -108,7 +108,7 @@ app.post("/data", async (req, res) => {
             return {
               _id: item.id,
               Value: item.value,
-              refValue: Number(item.value).toString(16).slice(-13),
+              refValue: Number(item.value).toString(16).slice(-16),
               label: item.label,
               valueHuman: item.valueHuman
             };
