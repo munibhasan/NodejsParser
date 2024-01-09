@@ -49,8 +49,12 @@ async function saveDataInS3(folderName, objectBody) {
     await s3.upload(putObjectRequest).promise();
     return { status: true };
   } catch (err) {
-    console.log(`${err.message}`);
-    fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {});
+    console.log(`${err.message} when save data to s3`);
+    fs.appendFileSync(
+      "Schedular.txt",
+      `${err.message} when save data to s3\n`,
+      (e, r) => {}
+    );
 
     return { status: false, message: err.message };
   }
@@ -158,6 +162,19 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
                 (e, r) => {}
               );
 
+              // d.map(async (i) => {
+              //   if (i.OsmElement === null) {
+              //     try {
+              //       i.OsmElement = await fetchLocationData(
+              //         i.GpsElement.Y,
+              //         i.GpsElement.X
+              //       );
+              //     } catch (e) {
+              //       console.log(e);
+              //     }
+              //   }
+              //   return i;
+              // });
               const compressedData = zlib.gzipSync(JSON.stringify(d));
               await saveDataInS3(
                 `${client._id}/${item.vehicleReg}/${date}.gzip`,
@@ -251,45 +268,44 @@ async function getoldDataFromMongoAndSavetoS3(timeZone) {
             if (d.length > 0) {
               const groupeddata = groupByDate(d, "DateTime");
               const dates = Object.keys(groupeddata);
-              dates.map((date) => {
-                s3.getObject(
-                  {
-                    Bucket: process.env.Bucket2,
-                    Key: `${client._id}/${item.vehicleReg}/${date}.gzip`
-                  },
-                  async (err, compressedFileContent) => {
-                    if (err) {
-                      fs.appendFileSync(
-                        "Schedular.txt",
-                        "err",
-                        `${client._id}/${item.vehicleReg}/${date}.gzip`,
-                        groupeddata[date].length,
-                        (e, r) => {}
-                      );
-                      console.log(
-                        "err",
-                        `${client._id}/${item.vehicleReg}/${date}.gzip`,
-                        groupeddata[date].length
-                      );
-                      const compressedData = zlib.gzipSync(
-                        JSON.stringify(groupeddata[date])
-                      );
-                      await saveDataInS3(
-                        `${client._id}/${item.vehicleReg}/${date}.gzip`,
-                        compressedData
-                      );
-                      const dataIds = groupeddata[date].map((it) => {
-                        return it._id;
-                      });
+              dates.map(async (date) => {
+                try {
+                  s3.getObject(
+                    {
+                      Bucket: process.env.Bucket2,
+                      Key: `${client._id}/${item.vehicleReg}/${date}.gzip`
+                    },
+                    async (err, compressedFileContent) => {
+                      if (err) {
+                        console.log("err", err.message);
+                        console.log(
+                          groupeddata[date].length,
+                          item.vehicleReg,
+                          date
+                        );
 
-                      await mongoose.connection.db
-                        .collection(collectionName)
-                        .deleteMany({ _id: { $in: dataIds } });
-                    } else {
+                        const compressedData = zlib.gzipSync(
+                          JSON.stringify(groupeddata[date])
+                        );
+
+                        await saveDataInS3(
+                          `${client._id}/${item.vehicleReg}/${date}.gzip`,
+                          compressedData
+                        );
+                        const dataIds = groupeddata[date].map((it) => {
+                          return it._id;
+                        });
+
+                        await mongoose.connection.db
+                          .collection(collectionName)
+                          .deleteMany({ _id: { $in: dataIds } });
+                        return;
+                      }
                       zlib.unzip(
                         compressedFileContent.Body,
                         async (err, deCompressedJSONFile) => {
                           if (err) {
+                            return;
                           } else {
                             let jsonfileContent = JSON.parse(
                               deCompressedJSONFile.toString("utf8")
@@ -299,6 +315,16 @@ async function getoldDataFromMongoAndSavetoS3(timeZone) {
                               ...jsonfileContent,
                               ...groupeddata[date]
                             ];
+
+                            console.log(item.vehicleReg, date);
+                            console.log(
+                              jsonfileContent.length,
+                              "1",
+                              groupeddata[date].length,
+                              "2",
+                              arr.length,
+                              "3"
+                            );
 
                             const compressedData = zlib.gzipSync(
                               JSON.stringify(arr)
@@ -315,18 +341,22 @@ async function getoldDataFromMongoAndSavetoS3(timeZone) {
                             await mongoose.connection.db
                               .collection(collectionName)
                               .deleteMany({ _id: { $in: dataIds } });
+                            return;
                           }
                         }
                       );
                     }
-                  }
-                );
+                  );
+                } catch (e) {
+                  console.log(e.message);
+                }
               });
             }
           });
       });
     });
   } catch (err) {
+    console.log(err.message);
     fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {});
   }
 }
@@ -336,13 +366,12 @@ async function main() {
     try {
       (
         await clientModel.find({
-          _id: { $ne: ObjectId("65575c79332051f73cb9a06b") }
+          _id: { $ne: new ObjectId("65575c79332051f73cb9a06b") }
         })
       ).map(async (client) => {
         const vehicles = await vehicleModel.find({ clientId: client._id });
         vehicles.map(async (item) => {
           const collectionName = `avl_${client._id}_today`;
-
           const collectionData = await mongoose.connection.db
             .collection(collectionName)
             .aggregate([
@@ -351,62 +380,74 @@ async function main() {
                   OsmElement: null,
                   vehicleReg: item.vehicleReg
                 }
-              }
+              },
+              { $limit: 100 }
             ])
             .toArray();
-          console.log(`${item.vehicleReg}, ${collectionData.length}`);
-          fs.appendFileSync(
-            "Schedular.txt",
-            `${item.vehicleReg}, ${collectionData.length}\n`,
-            (e, r) => {}
+          console.log(
+            `osm null shedular${item.vehicleReg}, ${collectionData.length}`
           );
-
-          const locationDataPromises = collectionData.map(async (document) => {
-            try {
-              const osmElements = await fetchLocationData(
-                document.GpsElement.Y,
-                document.GpsElement.X
-              );
-
-              return { _id: document._id, OsmElement: osmElements };
-            } catch (fetchError) {
-              console.log(
-                `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}`
-              );
-              fs.appendFileSync(
-                "Schedular.txt",
-                `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}\n`,
-                (e, r) => {}
-              );
-
-              return null; // or handle this case appropriately
-            }
-          });
-          const locationData = await Promise.all(locationDataPromises);
-
-          const updatePromises = locationData
-            .filter((data) => data !== null)
-            .map(async (location) => {
-              try {
-                await mongoose.connection.db
-                  .collection(collectionName)
-                  .findOneAndUpdate(
-                    { _id: location._id },
-                    { $set: { OsmElement: location.OsmElement } }
+          // fs.appendFileSync(
+          //   "Schedular.txt",
+          //   `${item.vehicleReg}, ${collectionData.length}\n`,
+          //   (e, r) => {}
+          // );
+          if (collectionData.length > 0) {
+            const locationDataPromises = collectionData.map(
+              async (document) => {
+                try {
+                  const osmElements = await fetchLocationData(
+                    document.GpsElement.Y,
+                    document.GpsElement.X
                   );
-              } catch (err) {
-                console.log(err.message);
-                fs.appendFileSync(
-                  "Schedular.txt",
-                  `${err.message}\n`,
-                  (e, r) => {}
-                );
+
+                  return { _id: document._id, OsmElement: osmElements };
+                } catch (fetchError) {
+                  console.log(
+                    `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}`
+                  );
+                  // fs.appendFileSync(
+                  //   "Schedular.txt",
+                  //   `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}\n`,
+                  //   (e, r) => {}
+                  // );
+
+                  return null; // or handle this case appropriately
+                }
               }
-            });
-          await Promise.all(updatePromises);
+            );
+
+            const locationData = await Promise.all(locationDataPromises);
+
+            const updatePromises = locationData
+              .filter((data) => data !== null)
+              .map(async (location) => {
+                try {
+                  console.log(location._id);
+                  console.log(location.OsmElement.display_name);
+
+                  await mongoose.connection.db
+                    .collection(collectionName)
+                    .findOneAndUpdate(
+                      { _id: location._id },
+                      { $set: { OsmElement: location.OsmElement } }
+                    );
+                } catch (err) {
+                  console.log(err.message);
+                  // fs.appendFileSync(
+                  //   "Schedular.txt",
+                  //   `${err.message}\n`,
+                  //   (e, r) => {}
+                  // );
+                }
+              });
+            await Promise.all(updatePromises);
+          }
         });
       });
-    } catch (err) {}
+    } catch (err) {
+      console.log(err.message);
+    }
   });
 
   cron.schedule(
@@ -428,7 +469,7 @@ async function main() {
   cron.schedule(
     "30 0 * * *",
     async () => {
-      console.log("Schedular run for the region of Europe/London");
+      console.log("2nd Schedular run for the region of Europe/London");
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Europe/London\n",
@@ -461,7 +502,7 @@ async function main() {
   cron.schedule(
     "30 0 * * *",
     async () => {
-      console.log("Schedular run for the region of Asia/Karachi");
+      console.log("2nd Schedular run for the region of Asia/Karachi");
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Asia/Karachi\n",
@@ -494,7 +535,7 @@ async function main() {
   cron.schedule(
     "30 0 * * *",
     async () => {
-      console.log("Schedular run for the region of America/Halifax");
+      console.log("2nd Schedular run for the region of America/Halifax");
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of America/Halifax\n",
@@ -529,7 +570,7 @@ async function main() {
   cron.schedule(
     "30 0 * * *",
     async () => {
-      console.log("Schedular run for the region of America/Winnipeg");
+      console.log("2nd Schedular run for the region of America/Winnipeg");
 
       fs.appendFileSync(
         "Schedular.txt",
@@ -563,7 +604,7 @@ async function main() {
   cron.schedule(
     "30 0 * * *",
     async () => {
-      console.log("Schedular run for the region of Europe/Paris");
+      console.log("2nd Schedular run for the region of Europe/Paris");
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Europe/Paris\n",
