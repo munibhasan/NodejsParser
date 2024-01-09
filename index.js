@@ -58,6 +58,27 @@ app.get("/", async (req, res) => {
     return res.status(200).json({ data: null, message: err.message });
   }
 });
+// function isPointInPolygon(point, polygon) {
+//   const x = point.x;
+//   const y = point.y;
+//   const numVertices = polygon.length;
+//   let inside = false;
+
+//   // Perform the ray casting algorithm:
+//   for (let i = 0, j = numVertices - 1; i < numVertices; j = i++) {
+//     const xi = polygon[i].x;
+//     const yi = polygon[i].y;
+//     const xj = polygon[j].x;
+//     const yj = polygon[j].y;
+
+//     // Check if ray intersects with polygon edge:
+//     if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+//       inside = !inside;
+//     }
+//   }
+
+//   return inside;
+// }
 app.post("/data", async (req, res) => {
   try {
     const {
@@ -386,6 +407,107 @@ app.post("/data", async (req, res) => {
         );
       }
     }
+
+    // const zones = await zoneModel.findByClientId(clientId);
+    // for (var zone in zones) {
+    //   if (zone.zoneType === "Circle") {
+    //     const zoneLat = parseFloat(zone.centerPoints.split(".")[0]); // Parse zone latitude as float
+    //     const zoneLng = parseFloat(zone.centerPoints.split(".")[1]); // Parse zone longitude as float
+    //     const zoneDiameter = parseFloat(zone.latlngCordinates);
+
+    //     // Calculate distance from point to zone center using Pythagorean theorem
+    //     const distance = Math.sqrt(
+    //       Math.pow(gps.latitude - zoneLat, 2) +
+    //         Math.pow(gps.longitude - zoneLng, 2)
+    //     );
+
+    //     // Check if point is within the zone's circle
+    //     if (distance <= zoneDiameter / 2) {
+    //     }
+    //   } else {
+    //     let jArray = JSON.parse(zone.latlngCordinates).map((latlngc) => {
+    //       return { y: latlngc.lat, x: latlngc.lng };
+    //     });
+    //     isPointInPolygon({ x: gps.latitude, y: gps.longitude }, jArray);
+    //   }
+    // }
+    //targetEnteredZone
+    // if (2 == 2) {
+    //   console.log(
+    //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg}`
+    //   );
+    //   fs.appendFileSync(
+    //     "server.txt",
+    //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
+    //     (e, r) => {}
+    //   );
+    //   try {
+    //     axios.post(
+    //       "https://backend.vtracksolutions.com/eventshandling/targetEnteredZone",
+    //       {
+    //         clientId,
+    //         vehicleReg,
+    //         dateTime: DateTimeDevice,
+    //         speed: gps?.speed,
+    //         lat: gps?.latitude,
+    //         lng: gps?.longitude,
+    //         zonename: ""
+    //       },
+    //       {
+    //         httpsAgent,
+    //         "Content-Type": "application/json"
+    //       }
+    //     );
+    //   } catch (err) {
+    //     console.log(
+    //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+    //     );
+    //     fs.appendFileSync(
+    //       "server.txt",
+    //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+    //       (e, r) => {}
+    //     );
+    //   }
+    // }
+    // //targetLeftZone
+    // if (2 == 2) {
+    //   console.log(
+    //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg}`
+    //   );
+    //   fs.appendFileSync(
+    //     "server.txt",
+    //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
+    //     (e, r) => {}
+    //   );
+    //   try {
+    //     axios.post(
+    //       "https://backend.vtracksolutions.com/eventshandling/targetLeftZone",
+    //       {
+    //         clientId,
+    //         vehicleReg,
+    //         dateTime: DateTimeDevice,
+    //         speed: gps?.speed,
+    //         lat: gps?.latitude,
+    //         lng: gps?.longitude,
+    //         zonename: ""
+    //       },
+    //       {
+    //         httpsAgent,
+    //         "Content-Type": "application/json"
+    //       }
+    //     );
+    //   } catch (err) {
+    //     console.log(
+    //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+    //     );
+    //     fs.appendFileSync(
+    //       "server.txt",
+    //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+    //       (e, r) => {}
+    //     );
+    //   }
+    // }
+
     // res.send(payloadMongo)
   } catch (err) {
     console.log(

@@ -179,6 +179,158 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
     fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {});
   }
 }
+function groupByDate(array, dateField) {
+  const groupedData = {};
+
+  array.forEach((item) => {
+    const date = new Date(item[dateField]);
+    const formattedDate = date.toISOString().slice(0, 10); // Format for grouping (YYYY-MM-DD)
+
+    if (!groupedData[formattedDate]) {
+      groupedData[formattedDate] = [];
+    }
+
+    groupedData[formattedDate].push(item);
+  });
+
+  return groupedData;
+}
+async function getoldDataFromMongoAndSavetoS3(timeZone) {
+  try {
+    const fromDate = moment(
+      momentTz(new Date())
+        .tz(timeZone)
+        .subtract(1, "days")
+        .startOf("day")
+        .toString()
+    ).format("YYYY-MM-DDT00:00:00");
+
+    (
+      await clientModel.find({
+        timeZone
+      })
+    ).map(async (client) => {
+      const vehicles = await vehicleModel.find({ clientId: client._id });
+      const collectionName = `avl_${client._id}_today`;
+
+      vehicles.map((item) => {
+        mongoose.connection.db
+          .collection(collectionName)
+          .aggregate([
+            {
+              $project: {
+                date: {
+                  $dateToString: {
+                    date: "$DateTime",
+                    timezone: timeZone
+                  }
+                },
+                clientId: 1,
+                vehicleReg: 1,
+                deviceIMEI: 1,
+                DriverName: 1,
+                GpsElement: 1,
+                IoElement: 1,
+                OsmElement: 1,
+                GpsElement: 1,
+                Priority: 1,
+                DateTime: 1,
+                ServerDateTime: 1,
+                DateTimeDevice: 1
+              }
+            },
+            {
+              $match: {
+                date: { $lt: fromDate },
+                vehicleReg: item.vehicleReg
+              }
+            }
+          ])
+          .toArray()
+          .then(async (d) => {
+            if (d.length > 0) {
+              const groupeddata = groupByDate(d, "DateTime");
+              const dates = Object.keys(groupeddata);
+              dates.map((date) => {
+                s3.getObject(
+                  {
+                    Bucket: process.env.Bucket2,
+                    Key: `${client._id}/${item.vehicleReg}/${date}.gzip`
+                  },
+                  async (err, compressedFileContent) => {
+                    if (err) {
+                      fs.appendFileSync(
+                        "Schedular.txt",
+                        "err",
+                        `${client._id}/${item.vehicleReg}/${date}.gzip`,
+                        groupeddata[date].length,
+                        (e, r) => {}
+                      );
+                      console.log(
+                        "err",
+                        `${client._id}/${item.vehicleReg}/${date}.gzip`,
+                        groupeddata[date].length
+                      );
+                      const compressedData = zlib.gzipSync(
+                        JSON.stringify(groupeddata[date])
+                      );
+                      await saveDataInS3(
+                        `${client._id}/${item.vehicleReg}/${date}.gzip`,
+                        compressedData
+                      );
+                      const dataIds = groupeddata[date].map((it) => {
+                        return it._id;
+                      });
+
+                      await mongoose.connection.db
+                        .collection(collectionName)
+                        .deleteMany({ _id: { $in: dataIds } });
+                    } else {
+                      zlib.unzip(
+                        compressedFileContent.Body,
+                        async (err, deCompressedJSONFile) => {
+                          if (err) {
+                          } else {
+                            let jsonfileContent = JSON.parse(
+                              deCompressedJSONFile.toString("utf8")
+                            );
+
+                            const arr = [
+                              ...jsonfileContent,
+                              ...groupeddata[date]
+                            ];
+
+                            const compressedData = zlib.gzipSync(
+                              JSON.stringify(arr)
+                            );
+
+                            await saveDataInS3(
+                              `${client._id}/${item.vehicleReg}/${date}.gzip`,
+                              compressedData
+                            );
+                            const dataIds = groupeddata[date].map((it) => {
+                              return it._id;
+                            });
+
+                            await mongoose.connection.db
+                              .collection(collectionName)
+                              .deleteMany({ _id: { $in: dataIds } });
+                          }
+                        }
+                      );
+                    }
+                  }
+                );
+              });
+            }
+          });
+      });
+    });
+  } catch (err) {
+    fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {});
+  }
+}
+
 async function main() {
   cron.schedule("*/30 * * * *", async () => {
     try {
@@ -273,6 +425,22 @@ async function main() {
       timezone: "Europe/London" //9
     }
   );
+  cron.schedule(
+    "30 0 * * *",
+    async () => {
+      console.log("Schedular run for the region of Europe/London");
+      fs.appendFileSync(
+        "Schedular.txt",
+        "Schedular run for the region of Europe/London\n",
+        (e, r) => {}
+      );
+
+      getoldDataFromMongoAndSavetoS3("Europe/London");
+    },
+    {
+      timezone: "Europe/London" //9
+    }
+  );
 
   cron.schedule(
     "15 0 * * *",
@@ -290,6 +458,22 @@ async function main() {
       timezone: "Asia/Karachi" //7
     }
   );
+  cron.schedule(
+    "30 0 * * *",
+    async () => {
+      console.log("Schedular run for the region of Asia/Karachi");
+      fs.appendFileSync(
+        "Schedular.txt",
+        "Schedular run for the region of Asia/Karachi\n",
+        (e, r) => {}
+      );
+
+      getoldDataFromMongoAndSavetoS3("Asia/Karachi");
+    },
+    {
+      timezone: "Asia/Karachi" //9
+    }
+  );
 
   cron.schedule(
     "15 0 * * *",
@@ -302,6 +486,22 @@ async function main() {
       );
 
       getDataFromMongoAndSavetoS3("America/Halifax");
+    },
+    {
+      timezone: "America/Halifax" //1
+    }
+  );
+  cron.schedule(
+    "30 0 * * *",
+    async () => {
+      console.log("Schedular run for the region of America/Halifax");
+      fs.appendFileSync(
+        "Schedular.txt",
+        "Schedular run for the region of America/Halifax\n",
+        (e, r) => {}
+      );
+
+      getoldDataFromMongoAndSavetoS3("America/Halifax");
     },
     {
       timezone: "America/Halifax" //1
@@ -327,6 +527,24 @@ async function main() {
   );
 
   cron.schedule(
+    "30 0 * * *",
+    async () => {
+      console.log("Schedular run for the region of America/Winnipeg");
+
+      fs.appendFileSync(
+        "Schedular.txt",
+        `Schedular run for the region of America/Winnipeg\n`,
+        (e, r) => {}
+      );
+
+      getoldDataFromMongoAndSavetoS3("America/Winnipeg");
+    },
+    {
+      timezone: "America/Winnipeg" //1
+    }
+  );
+
+  cron.schedule(
     "15 0 * * *",
     async () => {
       console.log("Schedular run for the region of Europe/Paris");
@@ -337,6 +555,22 @@ async function main() {
       );
 
       getDataFromMongoAndSavetoS3("Europe/Paris");
+    },
+    {
+      timezone: "Europe/Paris" //1
+    }
+  );
+  cron.schedule(
+    "30 0 * * *",
+    async () => {
+      console.log("Schedular run for the region of Europe/Paris");
+      fs.appendFileSync(
+        "Schedular.txt",
+        "Schedular run for the region of Europe/Paris\n",
+        (e, r) => {}
+      );
+
+      getoldDataFromMongoAndSavetoS3("Europe/Paris");
     },
     {
       timezone: "Europe/Paris" //1
