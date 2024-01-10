@@ -7,6 +7,10 @@ const cors = require("cors");
 const axios = require("axios");
 const express = require("express");
 
+const moment = require("moment-timezone");
+const clientImport = require("./Modules/Clients/model/client.model");
+const clientModel = clientImport.model;
+var ObjectId = require("mongodb").ObjectId;
 const { mongoose } = require("./utils/mongoose.service");
 const { fetchLocationData } = require("./utils/fetchLocationData");
 
@@ -93,16 +97,21 @@ app.post("/data", async (req, res) => {
       DateTimeDevice,
       eventId
     } = req.body;
+    let { timeZone } = req.body;
     let osmElements = null;
     if (clientId != "65575c79332051f73cb9a06b") {
       osmElements = await fetchLocationData(gps.latitude, gps.longitude);
     }
-
+    if (timeZone === undefined) {
+      timeZone = (
+        await clientModel.findOne({
+          _id: new ObjectId(clientId)
+        })
+      ).timeZone;
+    }
     var date = new Date();
-
     const localDate = date.toLocaleDateString();
     const localTime = date.toLocaleTimeString();
-
     const payloadMongo = {
       clientId,
       vehicleReg,
@@ -147,264 +156,278 @@ app.post("/data", async (req, res) => {
       (e, r) => {}
     );
 
-    //ignitionOff
-    if (
-      eventId == 239 &&
-      ioElements.filter((item) => {
-        return item.id == 239;
-      })[0]?.value == 0
-    ) {
-      console.log(
-        `ignitionOff Event in vehicle: ${collectionName}/${vehicleReg}`
-      );
-      fs.appendFileSync(
-        "server.txt",
-        `ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-        (e, r) => {}
-      );
-      try {
-        axios.post(
-          "https://backend.vtracksolutions.com/eventshandling/ignitionOff",
-          {
-            clientId,
-            vehicleReg,
-            dateTime: DateTimeDevice,
-            speed: gps?.speed,
-            lat: gps?.latitude,
-            lng: gps?.longitude,
-            zonename: ""
-          },
-          {
-            httpsAgent,
-            "Content-Type": "application/json"
-          }
-        );
-      } catch (err) {
-        console.log(
-          `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
-        );
-        fs.appendFileSync(
-          "server.txt",
-          `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-          (e, r) => {}
-        );
-      }
-    }
-    //ignitionOn
-    if (
-      eventId == 239 &&
-      ioElements.filter((item) => {
-        return item.id == 239;
-      })[0]?.value == 1
-    ) {
-      console.log(
-        `ignitionOn Event in vehicle: ${collectionName}/${vehicleReg}`
-      );
-      fs.appendFileSync(
-        "server.txt",
-        `ignitionOn Event in vehicle: ${collectionName}/${vehicleReg}\n`,
-        (e, r) => {}
-      );
-      try {
-        axios.post(
-          "https://backend.vtracksolutions.com/eventshandling/ignitionOn",
-          {
-            clientId,
-            vehicleReg,
-            dateTime: DateTimeDevice,
-            speed: gps?.speed,
-            lat: gps?.latitude,
-            lng: gps?.longitude,
-            zonename: ""
-          },
-          {
-            httpsAgent,
-            "Content-Type": "application/json"
-          }
-        );
-      } catch (err) {
-        console.log(
-          `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
-        );
-        fs.appendFileSync(
-          "server.txt",
-          `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-          (e, r) => {}
-        );
-      }
-    }
+    const d2 = moment(date).tz(timeZone).format();
+    const currentTime = d2.split("T")[1].split(":");
+    const inputTime = timestamp.split("T")[1].split(":");
+    const currentDate = d2.split("T")[0].split("-");
+    const inputDate = timestamp.split("T")[0].split("-");
+    const diffinyear = currentDate[0] - inputDate[0];
+    const diffinmonth = currentDate[1] - inputDate[1];
+    const diffinday = currentDate[2] - inputDate[2];
+    const diffinhour = currentTime[0] - inputTime[0];
+    const diffinminutes = currentTime[1] - inputTime[1];
+    const diff = diffinhour * 60 + diffinminutes;
 
-    //harshBreak
-    if (
-      eventId == 253 &&
-      ioElements.filter((item) => {
-        return item.id == 253;
-      })[0]?.value == 2
-    ) {
-      console.log(
-        `Harshbreak Event in vehicle: ${collectionName}/${vehicleReg}`
-      );
-      fs.appendFileSync(
-        "server.txt",
-        `Harshbreak Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-        (e, r) => {}
-      );
-      try {
-        axios.post(
-          "https://backend.vtracksolutions.com/eventshandling/harshBreak",
-          {
-            clientId,
-            vehicleReg,
-            dateTime: DateTimeDevice,
-            speed: gps?.speed,
-            lat: gps?.latitude,
-            lng: gps?.longitude,
-            zonename: ""
-          },
-          {
-            httpsAgent,
-            "Content-Type": "application/json"
-          }
-        );
-      } catch (err) {
+    if (diffinyear == 0 && diffinmonth == 0 && diffinday == 0 && diff <= 5) {
+      //ignitionOff
+      if (
+        eventId == 239 &&
+        ioElements.filter((item) => {
+          return item.id == 239;
+        })[0]?.value == 0
+      ) {
         console.log(
-          `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+          `ignitionOff Event in vehicle: ${collectionName}/${vehicleReg}`
         );
         fs.appendFileSync(
           "server.txt",
-          `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+          `ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} \n`,
           (e, r) => {}
         );
+        try {
+          axios.post(
+            "https://backend.vtracksolutions.com/eventshandling/ignitionOff",
+            {
+              clientId,
+              vehicleReg,
+              dateTime: DateTimeDevice,
+              speed: gps?.speed,
+              lat: gps?.latitude,
+              lng: gps?.longitude,
+              zonename: ""
+            },
+            {
+              httpsAgent,
+              "Content-Type": "application/json"
+            }
+          );
+        } catch (err) {
+          console.log(
+            `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+          );
+          fs.appendFileSync(
+            "server.txt",
+            `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+            (e, r) => {}
+          );
+        }
       }
-    }
-    //harshCornering
-    if (
-      eventId == 253 &&
-      ioElements.filter((item) => {
-        return item.id == 253;
-      })[0]?.value == 3
-    ) {
-      console.log(
-        `harshCornering Event in vehicle: ${collectionName}/${vehicleReg}`
-      );
-      fs.appendFileSync(
-        "server.txt",
-        `harshCornering Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-        (e, r) => {}
-      );
-      try {
-        axios.post(
-          "https://backend.vtracksolutions.com/eventshandling/harshCornering",
-          {
-            clientId,
-            vehicleReg,
-            dateTime: DateTimeDevice,
-            speed: gps?.speed,
-            lat: gps?.latitude,
-            lng: gps?.longitude,
-            zonename: ""
-          },
-          {
-            httpsAgent,
-            "Content-Type": "application/json"
-          }
-        );
-      } catch (err) {
+      //ignitionOn
+      if (
+        eventId == 239 &&
+        ioElements.filter((item) => {
+          return item.id == 239;
+        })[0]?.value == 1
+      ) {
         console.log(
-          `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+          `ignitionOn Event in vehicle: ${collectionName}/${vehicleReg}`
         );
         fs.appendFileSync(
           "server.txt",
-          `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+          `ignitionOn Event in vehicle: ${collectionName}/${vehicleReg}\n`,
           (e, r) => {}
         );
+        try {
+          axios.post(
+            "https://backend.vtracksolutions.com/eventshandling/ignitionOn",
+            {
+              clientId,
+              vehicleReg,
+              dateTime: DateTimeDevice,
+              speed: gps?.speed,
+              lat: gps?.latitude,
+              lng: gps?.longitude,
+              zonename: ""
+            },
+            {
+              httpsAgent,
+              "Content-Type": "application/json"
+            }
+          );
+        } catch (err) {
+          console.log(
+            `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+          );
+          fs.appendFileSync(
+            "server.txt",
+            `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+            (e, r) => {}
+          );
+        }
       }
-    }
-    //harshAcceleration
-    if (
-      eventId == 253 &&
-      ioElements.filter((item) => {
-        return item.id == 253;
-      })[0]?.value == 1
-    ) {
-      console.log(
-        `harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg}`
-      );
-      fs.appendFileSync(
-        "server.txt",
-        `harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-        (e, r) => {}
-      );
-      try {
-        axios.post(
-          "https://backend.vtracksolutions.com/eventshandling/harshAcceleration",
-          {
-            clientId,
-            vehicleReg,
-            dateTime: DateTimeDevice,
-            speed: gps?.speed,
-            lat: gps?.latitude,
-            lng: gps?.longitude,
-            zonename: ""
-          },
-          {
-            httpsAgent,
-            "Content-Type": "application/json"
-          }
-        );
-      } catch (err) {
-        console.log(
-          `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
-        );
-        fs.appendFileSync(
-          "server.txt",
-          `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-          (e, r) => {}
-        );
-      }
-    }
 
-    //overspeed
-    if (
-      eventId == 255 &&
-      ioElements.filter((item) => {
-        return item.id == 255;
-      }).length > 0
-    ) {
-      console.log(
-        `overspeed Event in vehicle: ${collectionName}/${vehicleReg}`
-      );
-      fs.appendFileSync(
-        "server.txt",
-        `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-        (e, r) => {}
-      );
-      try {
-        axios.post(
-          "https://backend.vtracksolutions.com/eventshandling/overSpeeding",
-          {
-            clientId,
-            vehicleReg,
-            dateTime: DateTimeDevice,
-            speed: gps?.speed,
-            lat: gps?.latitude,
-            lng: gps?.longitude,
-            zonename: ""
-          },
-          {
-            httpsAgent,
-            "Content-Type": "application/json"
-          }
-        );
-      } catch (err) {
+      //harshBreak
+      if (
+        eventId == 253 &&
+        ioElements.filter((item) => {
+          return item.id == 253;
+        })[0]?.value == 2
+      ) {
         console.log(
-          `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+          `Harshbreak Event in vehicle: ${collectionName}/${vehicleReg}`
         );
         fs.appendFileSync(
           "server.txt",
-          `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+          `Harshbreak Event in vehicle: ${collectionName}/${vehicleReg} \n`,
           (e, r) => {}
         );
+        try {
+          axios.post(
+            "https://backend.vtracksolutions.com/eventshandling/harshBreak",
+            {
+              clientId,
+              vehicleReg,
+              dateTime: DateTimeDevice,
+              speed: gps?.speed,
+              lat: gps?.latitude,
+              lng: gps?.longitude,
+              zonename: ""
+            },
+            {
+              httpsAgent,
+              "Content-Type": "application/json"
+            }
+          );
+        } catch (err) {
+          console.log(
+            `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+          );
+          fs.appendFileSync(
+            "server.txt",
+            `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+            (e, r) => {}
+          );
+        }
+      }
+      //harshCornering
+      if (
+        eventId == 253 &&
+        ioElements.filter((item) => {
+          return item.id == 253;
+        })[0]?.value == 3
+      ) {
+        console.log(
+          `harshCornering Event in vehicle: ${collectionName}/${vehicleReg}`
+        );
+        fs.appendFileSync(
+          "server.txt",
+          `harshCornering Event in vehicle: ${collectionName}/${vehicleReg} \n`,
+          (e, r) => {}
+        );
+        try {
+          axios.post(
+            "https://backend.vtracksolutions.com/eventshandling/harshCornering",
+            {
+              clientId,
+              vehicleReg,
+              dateTime: DateTimeDevice,
+              speed: gps?.speed,
+              lat: gps?.latitude,
+              lng: gps?.longitude,
+              zonename: ""
+            },
+            {
+              httpsAgent,
+              "Content-Type": "application/json"
+            }
+          );
+        } catch (err) {
+          console.log(
+            `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+          );
+          fs.appendFileSync(
+            "server.txt",
+            `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+            (e, r) => {}
+          );
+        }
+      }
+      //harshAcceleration
+      if (
+        eventId == 253 &&
+        ioElements.filter((item) => {
+          return item.id == 253;
+        })[0]?.value == 1
+      ) {
+        console.log(
+          `harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg}`
+        );
+        fs.appendFileSync(
+          "server.txt",
+          `harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} \n`,
+          (e, r) => {}
+        );
+        try {
+          axios.post(
+            "https://backend.vtracksolutions.com/eventshandling/harshAcceleration",
+            {
+              clientId,
+              vehicleReg,
+              dateTime: DateTimeDevice,
+              speed: gps?.speed,
+              lat: gps?.latitude,
+              lng: gps?.longitude,
+              zonename: ""
+            },
+            {
+              httpsAgent,
+              "Content-Type": "application/json"
+            }
+          );
+        } catch (err) {
+          console.log(
+            `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+          );
+          fs.appendFileSync(
+            "server.txt",
+            `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+            (e, r) => {}
+          );
+        }
+      }
+
+      //overspeed
+      if (
+        eventId == 255 &&
+        ioElements.filter((item) => {
+          return item.id == 255;
+        }).length > 0
+      ) {
+        console.log(
+          `overspeed Event in vehicle: ${collectionName}/${vehicleReg}`
+        );
+        fs.appendFileSync(
+          "server.txt",
+          `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
+          (e, r) => {}
+        );
+        try {
+          axios.post(
+            "https://backend.vtracksolutions.com/eventshandling/overSpeeding",
+            {
+              clientId,
+              vehicleReg,
+              dateTime: DateTimeDevice,
+              speed: gps?.speed,
+              lat: gps?.latitude,
+              lng: gps?.longitude,
+              zonename: ""
+            },
+            {
+              httpsAgent,
+              "Content-Type": "application/json"
+            }
+          );
+        } catch (err) {
+          console.log(
+            `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
+          );
+          fs.appendFileSync(
+            "server.txt",
+            `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
+            (e, r) => {}
+          );
+        }
       }
     }
 
@@ -510,14 +533,8 @@ app.post("/data", async (req, res) => {
 
     // res.send(payloadMongo)
   } catch (err) {
-    console.log(
-      `Error in insertion in collection: ${collectionName} is ${err.message}`
-    );
-    fs.appendFileSync(
-      "server.txt",
-      `Error in insertion in collection: ${collectionName} is ${err.message}\n`,
-      (e, r) => {}
-    );
+    console.log(` ${err.message}`);
+    fs.appendFileSync("server.txt", `${err.message}\n`, (e, r) => {});
 
     // res.send()
   }
