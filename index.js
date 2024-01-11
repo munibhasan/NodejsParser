@@ -164,9 +164,10 @@ app.post("/data", async (req, res) => {
     const diffinyear = currentDate[0] - inputDate[0];
     const diffinmonth = currentDate[1] - inputDate[1];
     const diffinday = currentDate[2] - inputDate[2];
-    const diffinhour = currentTime[0] - inputTime[0];
+    const diffinhour = (currentTime[0] - inputTime[0]) * 60;
     const diffinminutes = currentTime[1] - inputTime[1];
-    const diff = diffinhour * 60 + diffinminutes;
+
+    const diff = diffinhour + diffinminutes;
 
     if (diffinyear == 0 && diffinmonth == 0 && diffinday == 0 && diff <= 5) {
       //ignitionOff
