@@ -157,12 +157,12 @@ app.post("/data", async (req, res) => {
         fs.unlinkSync("server.txt");
       }
     );
-
-    const d2 = moment(date).tz(timeZone).format();
+    const d1 = moment(timestamp).tz(timeZone).format("YYYY-MM-DDTHH:mm:ss"); //input time
+    const d2 = moment(date).tz(timeZone).format("YYYY-MM-DDTHH:mm:ss"); //current time
     const currentTime = d2.split("T")[1].split(":");
-    const inputTime = timestamp.split("T")[1].split(":");
+    const inputTime = d1.split("T")[1].split(":");
     const currentDate = d2.split("T")[0].split("-");
-    const inputDate = timestamp.split("T")[0].split("-");
+    const inputDate = d1.split("T")[0].split("-");
     const diffinyear = currentDate[0] - inputDate[0];
     const diffinmonth = currentDate[1] - inputDate[1];
     const diffinday = currentDate[2] - inputDate[2];
@@ -171,7 +171,13 @@ app.post("/data", async (req, res) => {
 
     const diff = diffinhour + diffinminutes;
 
-    if (diffinyear == 0 && diffinmonth == 0 && diffinday == 0 && diff <= 5) {
+    if (
+      diffinyear == 0 &&
+      diffinmonth == 0 &&
+      diffinday == 0 &&
+      diff <= 5 &&
+      diff > 0
+    ) {
       //ignitionOff
       if (
         eventId == 239 &&
