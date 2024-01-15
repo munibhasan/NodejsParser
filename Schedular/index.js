@@ -53,7 +53,9 @@ async function saveDataInS3(folderName, objectBody) {
     fs.appendFileSync(
       "Schedular.txt",
       `${err.message} when save data to s3\n`,
-      (e, r) => {}
+      (e, r) => {
+        fs.unlinkSync("Schedular.txt");
+      }
     );
 
     return { status: false, message: err.message };
@@ -85,23 +87,8 @@ async function saveDataInS3(folderName, objectBody) {
 //   return groups;
 // };
 
-async function getDataFromMongoAndSavetoS3(timeZone) {
+async function getDataFromMongoAndSavetoS3(timeZone, fromDate, toDate) {
   try {
-    const fromDate = moment(
-      momentTz(new Date())
-        .tz(timeZone)
-        .subtract(1, "days")
-        .startOf("day")
-        .toString()
-    ).format("YYYY-MM-DDT00:00:00");
-
-    const toDate = moment(
-      momentTz(new Date())
-        .tz(timeZone)
-        .subtract(1, "days")
-        .startOf("day")
-        .toString()
-    ).format("YYYY-MM-DDT23:59:59");
     (
       await clientModel.find({
         timeZone
@@ -115,7 +102,9 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
       fs.appendFileSync(
         "Schedular.txt",
         `data get form collection: ${collectionName} with date range of ${fromDate} to ${toDate}\n`,
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
 
       vehicles.map((item) => {
@@ -159,7 +148,9 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
               fs.appendFileSync(
                 "Schedular.txt",
                 `${item.vehicleReg}, ${date},${d.length}\n`,
-                (e, r) => {}
+                (e, r) => {
+                  fs.unlinkSync("Schedular.txt");
+                }
               );
 
               // d.map(async (i) => {
@@ -193,7 +184,9 @@ async function getDataFromMongoAndSavetoS3(timeZone) {
     });
   } catch (err) {
     console.log(err.message);
-    fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {});
+    fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {
+      fs.unlinkSync("Schedular.txt");
+    });
   }
 }
 function groupByDate(array, dateField) {
@@ -212,16 +205,9 @@ function groupByDate(array, dateField) {
 
   return groupedData;
 }
-async function getoldDataFromMongoAndSavetoS3(timeZone) {
-  try {
-    const fromDate = moment(
-      momentTz(new Date())
-        .tz(timeZone)
-        .subtract(1, "days")
-        .startOf("day")
-        .toString()
-    ).format("YYYY-MM-DDT00:00:00");
 
+async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
+  try {
     (
       await clientModel.find({
         timeZone
@@ -357,7 +343,9 @@ async function getoldDataFromMongoAndSavetoS3(timeZone) {
     });
   } catch (err) {
     console.log(err.message);
-    fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {});
+    fs.appendFileSync("Schedular.txt", `${err.message}\n`, (e, r) => {
+      fs.unlinkSync("Schedular.txt");
+    });
   }
 }
 
@@ -387,11 +375,7 @@ async function main() {
           console.log(
             `osm null shedular${item.vehicleReg}, ${collectionData.length}`
           );
-          // fs.appendFileSync(
-          //   "Schedular.txt",
-          //   `${item.vehicleReg}, ${collectionData.length}\n`,
-          //   (e, r) => {}
-          // );
+
           if (collectionData.length > 0) {
             const locationDataPromises = collectionData.map(
               async (document) => {
@@ -406,11 +390,6 @@ async function main() {
                   console.log(
                     `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}`
                   );
-                  // fs.appendFileSync(
-                  //   "Schedular.txt",
-                  //   `Error in fetch location ${fetchError.message} at lat: ${document.GpsElement.Y} and lon: ${document.GpsElement.X}\n`,
-                  //   (e, r) => {}
-                  // );
 
                   return null; // or handle this case appropriately
                 }
@@ -420,12 +399,9 @@ async function main() {
             const locationData = await Promise.all(locationDataPromises);
 
             const updatePromises = locationData
-              .filter((data) => data !== null)
+              .filter((data) => data.OsmElement !== null)
               .map(async (location) => {
                 try {
-                  console.log(location._id);
-                  console.log(location.OsmElement.display_name);
-
                   await mongoose.connection.db
                     .collection(collectionName)
                     .findOneAndUpdate(
@@ -434,11 +410,6 @@ async function main() {
                     );
                 } catch (err) {
                   console.log(err.message);
-                  // fs.appendFileSync(
-                  //   "Schedular.txt",
-                  //   `${err.message}\n`,
-                  //   (e, r) => {}
-                  // );
                 }
               });
             await Promise.all(updatePromises);
@@ -450,6 +421,7 @@ async function main() {
     }
   });
 
+  // Europe/London
   cron.schedule(
     "15 0 * * *",
     async () => {
@@ -457,10 +429,26 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Europe/London\n",
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date())
+          .tz("Europe/London")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT00:00:00");
 
-      getDataFromMongoAndSavetoS3("Europe/London");
+      const toDate = moment(
+        momentTz(new Date())
+          .tz("Europe/London")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT23:59:59");
+      getDataFromMongoAndSavetoS3("Europe/London", fromDate, toDate);
     },
     {
       timezone: "Europe/London" //9
@@ -473,16 +461,26 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Europe/London\n",
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date())
+          .tz("Europe/London")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT00:00:00");
 
-      getoldDataFromMongoAndSavetoS3("Europe/London");
+      getoldDataFromMongoAndSavetoS3("Europe/London", fromDate);
     },
     {
       timezone: "Europe/London" //9
     }
   );
 
+  // Asia/Karachi
   cron.schedule(
     "15 0 * * *",
     async () => {
@@ -490,10 +488,18 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Asia/Karachi\n",
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date()).tz("Asia/Karachi").startOf("day").toString()
+      ).format("YYYY-MM-DDT00:00:00");
 
-      getDataFromMongoAndSavetoS3("Asia/Karachi");
+      const toDate = moment(
+        momentTz(new Date()).tz("Asia/Karachi").startOf("day").toString()
+      ).format("YYYY-MM-DDT23:59:59");
+      getDataFromMongoAndSavetoS3("Asia/Karachi", fromDate, toDate);
     },
     {
       timezone: "Asia/Karachi" //7
@@ -506,16 +512,22 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Asia/Karachi\n",
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date()).tz("Asia/Karachi").startOf("day").toString()
+      ).format("YYYY-MM-DDT00:00:00");
 
-      getoldDataFromMongoAndSavetoS3("Asia/Karachi");
+      getoldDataFromMongoAndSavetoS3("Asia/Karachi", fromDate);
     },
     {
       timezone: "Asia/Karachi" //9
     }
   );
 
+  // America/Halifax
   cron.schedule(
     "15 0 * * *",
     async () => {
@@ -523,10 +535,26 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of America/Halifax\n",
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date())
+          .tz("America/Halifax")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT00:00:00");
+      const toDate = moment(
+        momentTz(new Date())
+          .tz("America/Halifax")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT23:59:59");
 
-      getDataFromMongoAndSavetoS3("America/Halifax");
+      getDataFromMongoAndSavetoS3("America/Halifax", formDate, toDate);
     },
     {
       timezone: "America/Halifax" //1
@@ -539,16 +567,26 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of America/Halifax\n",
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date())
+          .tz("America/Halifax")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT00:00:00");
 
-      getoldDataFromMongoAndSavetoS3("America/Halifax");
+      getoldDataFromMongoAndSavetoS3("America/Halifax", fromDate);
     },
     {
       timezone: "America/Halifax" //1
     }
   );
 
+  // America/Winnipeg
   cron.schedule(
     "15 0 * * *",
     async () => {
@@ -557,16 +595,31 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         `Schedular run for the region of America/Winnipeg\n`,
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date())
+          .tz("America/Winnipeg")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT00:00:00");
 
-      getDataFromMongoAndSavetoS3("America/Winnipeg");
+      const toDate = moment(
+        momentTz(new Date())
+          .tz("America/Winnipeg")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT23:59:59");
+      getDataFromMongoAndSavetoS3("America/Winnipeg", fromDate, toDate);
     },
     {
       timezone: "America/Winnipeg" //1
     }
   );
-
   cron.schedule(
     "30 0 * * *",
     async () => {
@@ -575,16 +628,26 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         `Schedular run for the region of America/Winnipeg\n`,
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date())
+          .tz("America/Winnipeg")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT00:00:00");
 
-      getoldDataFromMongoAndSavetoS3("America/Winnipeg");
+      getoldDataFromMongoAndSavetoS3("America/Winnipeg", fromDate);
     },
     {
       timezone: "America/Winnipeg" //1
     }
   );
 
+  // Europe/Paris
   cron.schedule(
     "15 0 * * *",
     async () => {
@@ -592,10 +655,18 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Europe/Paris\n",
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date()).tz("Europe/Paris").startOf("day").toString()
+      ).format("YYYY-MM-DDT00:00:00");
 
-      getDataFromMongoAndSavetoS3("Europe/Paris");
+      const toDate = moment(
+        momentTz(new Date()).tz("Europe/Paris").startOf("day").toString()
+      ).format("YYYY-MM-DDT23:59:59");
+      getDataFromMongoAndSavetoS3("Europe/Paris", fromDate, toDate);
     },
     {
       timezone: "Europe/Paris" //1
@@ -608,10 +679,15 @@ async function main() {
       fs.appendFileSync(
         "Schedular.txt",
         "Schedular run for the region of Europe/Paris\n",
-        (e, r) => {}
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
       );
+      const fromDate = moment(
+        momentTz(new Date()).tz("Europe/Paris").startOf("day").toString()
+      ).format("YYYY-MM-DDT00:00:00");
 
-      getoldDataFromMongoAndSavetoS3("Europe/Paris");
+      getoldDataFromMongoAndSavetoS3("Europe/Paris", fromDate);
     },
     {
       timezone: "Europe/Paris" //1

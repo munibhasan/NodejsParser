@@ -153,7 +153,9 @@ app.post("/data", async (req, res) => {
     fs.appendFileSync(
       "server.txt",
       `Data inserted in collection: ${collectionName}\n`,
-      (e, r) => {}
+      (e, r) => {
+        fs.unlinkSync("server.txt");
+      }
     );
 
     const d2 = moment(date).tz(timeZone).format();
@@ -183,7 +185,9 @@ app.post("/data", async (req, res) => {
         fs.appendFileSync(
           "server.txt",
           `ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-          (e, r) => {}
+          (e, r) => {
+            fs.unlinkSync("server.txt");
+          }
         );
         try {
           axios.post(
@@ -209,7 +213,9 @@ app.post("/data", async (req, res) => {
           fs.appendFileSync(
             "server.txt",
             `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-            (e, r) => {}
+            (e, r) => {
+              fs.unlinkSync("server.txt");
+            }
           );
         }
       }
@@ -226,7 +232,9 @@ app.post("/data", async (req, res) => {
         fs.appendFileSync(
           "server.txt",
           `ignitionOn Event in vehicle: ${collectionName}/${vehicleReg}\n`,
-          (e, r) => {}
+          (e, r) => {
+            fs.unlinkSync("server.txt");
+          }
         );
         try {
           axios.post(
@@ -252,7 +260,9 @@ app.post("/data", async (req, res) => {
           fs.appendFileSync(
             "server.txt",
             `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-            (e, r) => {}
+            (e, r) => {
+              fs.unlinkSync("server.txt");
+            }
           );
         }
       }
@@ -270,7 +280,9 @@ app.post("/data", async (req, res) => {
         fs.appendFileSync(
           "server.txt",
           `Harshbreak Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-          (e, r) => {}
+          (e, r) => {
+            fs.unlinkSync("server.txt");
+          }
         );
         try {
           axios.post(
@@ -296,7 +308,9 @@ app.post("/data", async (req, res) => {
           fs.appendFileSync(
             "server.txt",
             `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-            (e, r) => {}
+            (e, r) => {
+              fs.unlinkSync("server.txt");
+            }
           );
         }
       }
@@ -313,7 +327,9 @@ app.post("/data", async (req, res) => {
         fs.appendFileSync(
           "server.txt",
           `harshCornering Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-          (e, r) => {}
+          (e, r) => {
+            fs.unlinkSync("server.txt");
+          }
         );
         try {
           axios.post(
@@ -339,7 +355,9 @@ app.post("/data", async (req, res) => {
           fs.appendFileSync(
             "server.txt",
             `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-            (e, r) => {}
+            (e, r) => {
+              fs.unlinkSync("server.txt");
+            }
           );
         }
       }
@@ -356,7 +374,9 @@ app.post("/data", async (req, res) => {
         fs.appendFileSync(
           "server.txt",
           `harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-          (e, r) => {}
+          (e, r) => {
+            fs.unlinkSync("server.txt");
+          }
         );
         try {
           axios.post(
@@ -382,7 +402,9 @@ app.post("/data", async (req, res) => {
           fs.appendFileSync(
             "server.txt",
             `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-            (e, r) => {}
+            (e, r) => {
+              fs.unlinkSync("server.txt");
+            }
           );
         }
       }
@@ -400,7 +422,9 @@ app.post("/data", async (req, res) => {
         fs.appendFileSync(
           "server.txt",
           `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-          (e, r) => {}
+          (e, r) => {
+            fs.unlinkSync("server.txt");
+          }
         );
         try {
           axios.post(
@@ -426,7 +450,9 @@ app.post("/data", async (req, res) => {
           fs.appendFileSync(
             "server.txt",
             `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-            (e, r) => {}
+            (e, r) => {
+              fs.unlinkSync("server.txt");
+            }
           );
         }
       }
@@ -463,7 +489,7 @@ app.post("/data", async (req, res) => {
     //   fs.appendFileSync(
     //     "server.txt",
     //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-    //     (e, r) => {}
+    //      (e, r) => {fs.unlinkSync("server.txt")}
     //   );
     //   try {
     //     axios.post(
@@ -489,7 +515,7 @@ app.post("/data", async (req, res) => {
     //     fs.appendFileSync(
     //       "server.txt",
     //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-    //       (e, r) => {}
+    //        (e, r) => {fs.unlinkSync("server.txt")}
     //     );
     //   }
     // }
@@ -501,7 +527,7 @@ app.post("/data", async (req, res) => {
     //   fs.appendFileSync(
     //     "server.txt",
     //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-    //     (e, r) => {}
+    //      (e, r) => {fs.unlinkSync("server.txt")}
     //   );
     //   try {
     //     axios.post(
@@ -527,7 +553,7 @@ app.post("/data", async (req, res) => {
     //     fs.appendFileSync(
     //       "server.txt",
     //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-    //       (e, r) => {}
+    //        (e, r) => {fs.unlinkSync("server.txt")}
     //     );
     //   }
     // }
@@ -535,7 +561,9 @@ app.post("/data", async (req, res) => {
     // res.send(payloadMongo)
   } catch (err) {
     console.log(` ${err.message}`);
-    fs.appendFileSync("server.txt", `${err.message}\n`, (e, r) => {});
+    fs.appendFileSync("server.txt", `${err.message}\n`, (e, r) => {
+      fs.unlinkSync("server.txt");
+    });
 
     // res.send()
   }
