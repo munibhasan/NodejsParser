@@ -176,7 +176,7 @@ app.post("/data", async (req, res) => {
       diffinmonth == 0 &&
       diffinday == 0 &&
       diff <= 5 &&
-      diff > 0
+      diff >= 0
     ) {
       //ignitionOff
       if (
