@@ -180,7 +180,7 @@ app.post("/data", async (req, res) => {
     ) {
       //ignitionOff
       if (
-        eventId == 250 &&
+        (eventId == 250 || eventId == 239) &&
         ioElements.filter((item) => {
           return item.id == 239;
         })[0]?.value == 0
@@ -227,7 +227,7 @@ app.post("/data", async (req, res) => {
       }
       //ignitionOn
       if (
-        eventId == 250 &&
+        (eventId == 250 || eventId == 239) &&
         ioElements.filter((item) => {
           return item.id == 239;
         })[0]?.value == 1
@@ -462,6 +462,13 @@ app.post("/data", async (req, res) => {
           );
         }
       }
+    } else {
+      payloadMongo.d1 = d1;
+      payloadMongo.d2 = d2;
+
+      await mongoose.connection.db
+        .collection("eventshandling")
+        .insertOne({ payloadMongo });
     }
 
     // const zones = await zoneModel.findByClientId(clientId);
