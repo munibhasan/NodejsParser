@@ -462,13 +462,13 @@ app.post("/data", async (req, res) => {
           );
         }
       }
-    } else {
+    } else if (diffinyear == 0 && diffinmonth == 0 && diffinday == 0) {
       payloadMongo.d1 = d1;
       payloadMongo.d2 = d2;
 
       await mongoose.connection.db
         .collection("eventshandling")
-        .insertOne({ payloadMongo });
+        .insertOne(payloadMongo);
     }
 
     // const zones = await zoneModel.findByClientId(clientId);
