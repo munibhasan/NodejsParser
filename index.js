@@ -465,6 +465,7 @@ app.post("/data", async (req, res) => {
     } else if (diffinyear == 0 && diffinmonth == 0 && diffinday == 0) {
       payloadMongo.d1 = d1;
       payloadMongo.d2 = d2;
+      payloadMongo.diff = diff;
 
       await mongoose.connection.db
         .collection("eventshandling")
