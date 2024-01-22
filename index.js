@@ -196,22 +196,35 @@ app.post("/data", async (req, res) => {
           }
         );
         try {
-          axios.post(
-            "https://backend.vtracksolutions.com/eventshandling/ignitionOff",
-            {
-              clientId,
-              vehicleReg,
-              dateTime: DateTimeDevice,
-              speed: gps?.speed,
-              lat: gps?.latitude,
-              lng: gps?.longitude,
-              zonename: ""
-            },
-            {
-              httpsAgent,
-              "Content-Type": "application/json"
-            }
-          );
+          axios
+            .post(
+              "https://backend.vtracksolutions.com/eventshandling/ignitionOff",
+              {
+                clientId,
+                vehicleReg,
+                dateTime: DateTimeDevice,
+                speed: gps?.speed,
+                lat: gps?.latitude,
+                lng: gps?.longitude,
+                zonename: ""
+              },
+              {
+                httpsAgent,
+                "Content-Type": "application/json"
+              }
+            )
+            .then((response) => {
+              // Handle successful response
+            })
+            .catch((error) => {
+              if (error.response && error.response.status === 502) {
+                // Handle 502 error specifically
+                console.error("Bad Gateway encountered");
+                // Implement recovery logic or retry mechanism
+              } else {
+                // Handle other errors
+              }
+            });
         } catch (err) {
           console.log(
             `Error on ignitionOff Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
@@ -243,22 +256,35 @@ app.post("/data", async (req, res) => {
           }
         );
         try {
-          axios.post(
-            "https://backend.vtracksolutions.com/eventshandling/ignitionOn",
-            {
-              clientId,
-              vehicleReg,
-              dateTime: DateTimeDevice,
-              speed: gps?.speed,
-              lat: gps?.latitude,
-              lng: gps?.longitude,
-              zonename: ""
-            },
-            {
-              httpsAgent,
-              "Content-Type": "application/json"
-            }
-          );
+          axios
+            .post(
+              "https://backend.vtracksolutions.com/eventshandling/ignitionOn",
+              {
+                clientId,
+                vehicleReg,
+                dateTime: DateTimeDevice,
+                speed: gps?.speed,
+                lat: gps?.latitude,
+                lng: gps?.longitude,
+                zonename: ""
+              },
+              {
+                httpsAgent,
+                "Content-Type": "application/json"
+              }
+            )
+            .then((response) => {
+              // Handle successful response
+            })
+            .catch((error) => {
+              if (error.response && error.response.status === 502) {
+                // Handle 502 error specifically
+                console.error("Bad Gateway encountered");
+                // Implement recovery logic or retry mechanism
+              } else {
+                // Handle other errors
+              }
+            });
         } catch (err) {
           console.log(
             `Error on ignitionOn Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
@@ -291,22 +317,35 @@ app.post("/data", async (req, res) => {
           }
         );
         try {
-          axios.post(
-            "https://backend.vtracksolutions.com/eventshandling/harshBreak",
-            {
-              clientId,
-              vehicleReg,
-              dateTime: DateTimeDevice,
-              speed: gps?.speed,
-              lat: gps?.latitude,
-              lng: gps?.longitude,
-              zonename: ""
-            },
-            {
-              httpsAgent,
-              "Content-Type": "application/json"
-            }
-          );
+          axios
+            .post(
+              "https://backend.vtracksolutions.com/eventshandling/harshBreak",
+              {
+                clientId,
+                vehicleReg,
+                dateTime: DateTimeDevice,
+                speed: gps?.speed,
+                lat: gps?.latitude,
+                lng: gps?.longitude,
+                zonename: ""
+              },
+              {
+                httpsAgent,
+                "Content-Type": "application/json"
+              }
+            )
+            .then((response) => {
+              // Handle successful response
+            })
+            .catch((error) => {
+              if (error.response && error.response.status === 502) {
+                // Handle 502 error specifically
+                console.error("Bad Gateway encountered");
+                // Implement recovery logic or retry mechanism
+              } else {
+                // Handle other errors
+              }
+            });
         } catch (err) {
           console.log(
             `Error on harshBreak Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
@@ -338,22 +377,35 @@ app.post("/data", async (req, res) => {
           }
         );
         try {
-          axios.post(
-            "https://backend.vtracksolutions.com/eventshandling/harshCornering",
-            {
-              clientId,
-              vehicleReg,
-              dateTime: DateTimeDevice,
-              speed: gps?.speed,
-              lat: gps?.latitude,
-              lng: gps?.longitude,
-              zonename: ""
-            },
-            {
-              httpsAgent,
-              "Content-Type": "application/json"
-            }
-          );
+          axios
+            .post(
+              "https://backend.vtracksolutions.com/eventshandling/harshCornering",
+              {
+                clientId,
+                vehicleReg,
+                dateTime: DateTimeDevice,
+                speed: gps?.speed,
+                lat: gps?.latitude,
+                lng: gps?.longitude,
+                zonename: ""
+              },
+              {
+                httpsAgent,
+                "Content-Type": "application/json"
+              }
+            )
+            .then((response) => {
+              // Handle successful response
+            })
+            .catch((error) => {
+              if (error.response && error.response.status === 502) {
+                // Handle 502 error specifically
+                console.error("Bad Gateway encountered");
+                // Implement recovery logic or retry mechanism
+              } else {
+                // Handle other errors
+              }
+            });
         } catch (err) {
           console.log(
             `Error on harshCornering Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
@@ -385,22 +437,35 @@ app.post("/data", async (req, res) => {
           }
         );
         try {
-          axios.post(
-            "https://backend.vtracksolutions.com/eventshandling/harshAcceleration",
-            {
-              clientId,
-              vehicleReg,
-              dateTime: DateTimeDevice,
-              speed: gps?.speed,
-              lat: gps?.latitude,
-              lng: gps?.longitude,
-              zonename: ""
-            },
-            {
-              httpsAgent,
-              "Content-Type": "application/json"
-            }
-          );
+          axios
+            .post(
+              "https://backend.vtracksolutions.com/eventshandling/harshAcceleration",
+              {
+                clientId,
+                vehicleReg,
+                dateTime: DateTimeDevice,
+                speed: gps?.speed,
+                lat: gps?.latitude,
+                lng: gps?.longitude,
+                zonename: ""
+              },
+              {
+                httpsAgent,
+                "Content-Type": "application/json"
+              }
+            )
+            .then((response) => {
+              // Handle successful response
+            })
+            .catch((error) => {
+              if (error.response && error.response.status === 502) {
+                // Handle 502 error specifically
+                console.error("Bad Gateway encountered");
+                // Implement recovery logic or retry mechanism
+              } else {
+                // Handle other errors
+              }
+            });
         } catch (err) {
           console.log(
             `Error on harshAcceleration Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
@@ -433,22 +498,35 @@ app.post("/data", async (req, res) => {
           }
         );
         try {
-          axios.post(
-            "https://backend.vtracksolutions.com/eventshandling/overSpeeding",
-            {
-              clientId,
-              vehicleReg,
-              dateTime: DateTimeDevice,
-              speed: gps?.speed,
-              lat: gps?.latitude,
-              lng: gps?.longitude,
-              zonename: ""
-            },
-            {
-              httpsAgent,
-              "Content-Type": "application/json"
-            }
-          );
+          axios
+            .post(
+              "https://backend.vtracksolutions.com/eventshandling/overSpeeding",
+              {
+                clientId,
+                vehicleReg,
+                dateTime: DateTimeDevice,
+                speed: gps?.speed,
+                lat: gps?.latitude,
+                lng: gps?.longitude,
+                zonename: ""
+              },
+              {
+                httpsAgent,
+                "Content-Type": "application/json"
+              }
+            )
+            .then((response) => {
+              // Handle successful response
+            })
+            .catch((error) => {
+              if (error.response && error.response.status === 502) {
+                // Handle 502 error specifically
+                console.error("Bad Gateway encountered");
+                // Implement recovery logic or retry mechanism
+              } else {
+                // Handle other errors
+              }
+            });
         } catch (err) {
           console.log(
             `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
