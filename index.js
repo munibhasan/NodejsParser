@@ -95,7 +95,8 @@ app.post("/data", async (req, res) => {
       timestamp,
       ioElements,
       DateTimeDevice,
-      eventId
+      eventId,
+      zone
     } = req.body;
     let { timeZone } = req.body;
     let osmElements = null;
@@ -118,6 +119,7 @@ app.post("/data", async (req, res) => {
       DriverName,
       deviceIMEI: IMEI,
       Priority: Priority,
+      zone,
       DateTime: new Date(timestamp),
       DateTimeDevice,
       ServerDateTime: localDate + " " + localTime,
