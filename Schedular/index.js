@@ -180,6 +180,59 @@ async function getDataFromMongoAndSavetoS3(timeZone, fromDate, toDate) {
                 .deleteMany({ _id: { $in: dataIds } });
             }
           });
+        ///////////////
+        mongoose.connection.db
+          .collection("events")
+          .aggregate([
+            {
+              $project: {
+                date: {
+                  $dateToString: {
+                    date: "$DateTime",
+                    timezone: timeZone
+                  }
+                },
+                clientId: 1,
+                vehicleReg: 1,
+                deviceIMEI: 1,
+                DriverName: 1,
+                GpsElement: 1,
+                IoElement: 1,
+                OsmElement: 1,
+                GpsElement: 1,
+                Priority: 1,
+                DateTime: 1,
+                ServerDateTime: 1,
+                DateTimeDevice: 1,
+                event: 1
+              }
+            },
+            {
+              $match: {
+                date: { $gte: fromDate, $lte: toDate },
+                vehicleReg: item.vehicleReg,
+                clientId: client._id
+              }
+            }
+          ])
+          .toArray()
+          .then(async (d) => {
+            const date = fromDate.split("T")[0];
+            if (d.length > 0) {
+              const compressedData = zlib.gzipSync(JSON.stringify(d));
+              await saveDataInS3(
+                `${client._id}/${item.vehicleReg}/event/${date}.gzip`,
+                compressedData
+              );
+              const dataIds = d.map((it) => {
+                return it._id;
+              });
+
+              await mongoose.connection.db
+                .collection("events")
+                .deleteMany({ _id: { $in: dataIds } });
+            }
+          });
       });
     });
   } catch (err) {
@@ -326,6 +379,131 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
 
                             await mongoose.connection.db
                               .collection(collectionName)
+                              .deleteMany({ _id: { $in: dataIds } });
+                            return;
+                          }
+                        }
+                      );
+                    }
+                  );
+                } catch (e) {
+                  console.log(e.message);
+                }
+              });
+            }
+          });
+        ///////////
+        mongoose.connection.db
+          .collection("events")
+          .aggregate([
+            {
+              $project: {
+                date: {
+                  $dateToString: {
+                    date: "$DateTime",
+                    timezone: timeZone
+                  }
+                },
+                clientId: 1,
+                vehicleReg: 1,
+                deviceIMEI: 1,
+                DriverName: 1,
+                GpsElement: 1,
+                IoElement: 1,
+                OsmElement: 1,
+                GpsElement: 1,
+                Priority: 1,
+                DateTime: 1,
+                ServerDateTime: 1,
+                DateTimeDevice: 1,
+                event: 1
+              }
+            },
+            {
+              $match: {
+                date: { $gte: fromDate, $lte: toDate },
+                vehicleReg: item.vehicleReg,
+                clientId: client._id
+              }
+            }
+          ])
+          .toArray()
+          .then(async (d) => {
+            if (d.length > 0) {
+              const groupeddata = groupByDate(d, "DateTime");
+              const dates = Object.keys(groupeddata);
+              dates.map(async (date) => {
+                try {
+                  s3.getObject(
+                    {
+                      Bucket: process.env.Bucket2,
+                      Key: `${client._id}/${item.vehicleReg}/event/${date}.gzip`
+                    },
+                    async (err, compressedFileContent) => {
+                      if (err) {
+                        console.log("err", err.message);
+                        console.log(
+                          groupeddata[date].length,
+                          item.vehicleReg,
+                          date
+                        );
+
+                        const compressedData = zlib.gzipSync(
+                          JSON.stringify(groupeddata[date])
+                        );
+
+                        await saveDataInS3(
+                          `${client._id}/${item.vehicleReg}/event/${date}.gzip`,
+                          compressedData
+                        );
+                        const dataIds = groupeddata[date].map((it) => {
+                          return it._id;
+                        });
+
+                        await mongoose.connection.db
+                          .collection("events")
+                          .deleteMany({ _id: { $in: dataIds } });
+                        return;
+                      }
+                      zlib.unzip(
+                        compressedFileContent.Body,
+                        async (err, deCompressedJSONFile) => {
+                          if (err) {
+                            return;
+                          } else {
+                            let jsonfileContent = JSON.parse(
+                              deCompressedJSONFile.toString("utf8")
+                            );
+
+                            const arr = [
+                              ...jsonfileContent,
+                              ...groupeddata[date]
+                            ];
+
+                            console.log(item.vehicleReg, date);
+                            console.log(
+                              jsonfileContent.length,
+                              "1",
+                              groupeddata[date].length,
+                              "2",
+                              arr.length,
+                              "3"
+                            );
+
+                            const compressedData = zlib.gzipSync(
+                              JSON.stringify(arr)
+                            );
+
+                            await saveDataInS3(
+                              `${client._id}/${item.vehicleReg}/event/${date}.gzip`,
+                              compressedData
+                            );
+                            const dataIds = groupeddata[date].map((it) => {
+                              return it._id;
+                            });
+
+                            await mongoose.connection.db
+                              .collection("events")
                               .deleteMany({ _id: { $in: dataIds } });
                             return;
                           }
