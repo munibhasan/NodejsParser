@@ -239,6 +239,9 @@ app.post("/data", async (req, res) => {
             }
           );
         }
+        await mongoose.connection.db
+          .collection("events")
+          .insertOne({ ...payloadMongo, event: "ignitionOff" });
       }
       //ignitionOn
       if (
@@ -299,6 +302,9 @@ app.post("/data", async (req, res) => {
             }
           );
         }
+        await mongoose.connection.db
+          .collection("events")
+          .insertOne({ ...payloadMongo, event: "ignitionOn" });
       }
 
       //harshBreak
@@ -360,6 +366,9 @@ app.post("/data", async (req, res) => {
             }
           );
         }
+        await mongoose.connection.db
+          .collection("events")
+          .insertOne({ ...payloadMongo, event: "harshBreak" });
       }
       //harshCornering
       if (
@@ -420,6 +429,9 @@ app.post("/data", async (req, res) => {
             }
           );
         }
+        await mongoose.connection.db
+          .collection("events")
+          .insertOne({ ...payloadMongo, event: "harshCornering" });
       }
       //harshAcceleration
       if (
@@ -480,6 +492,9 @@ app.post("/data", async (req, res) => {
             }
           );
         }
+        await mongoose.connection.db
+          .collection("events")
+          .insertOne({ ...payloadMongo, event: "harshAcceleration" });
       }
 
       //overspeed
@@ -541,115 +556,90 @@ app.post("/data", async (req, res) => {
             }
           );
         }
+        await mongoose.connection.db
+          .collection("events")
+          .insertOne({ ...payloadMongo, event: "overspeed" });
       }
-    } else if (diffinyear == 0 && diffinmonth == 0 && diffinday == 0) {
-      payloadMongo.d1 = d1;
-      payloadMongo.d2 = d2;
-      payloadMongo.diff = diff;
+    } else {
+      {
+        //ignitionOff
+        if (
+          (eventId == 250 || eventId == 239) &&
+          ioElements.filter((item) => {
+            return item.id == 239;
+          })[0]?.value == 0
+        ) {
+          await mongoose.connection.db
+            .collection("events")
+            .insertOne({ ...payloadMongo, event: "ignitionOff" });
+        }
+        //ignitionOn
+        if (
+          (eventId == 250 || eventId == 239) &&
+          ioElements.filter((item) => {
+            return item.id == 239;
+          })[0]?.value == 1
+        ) {
+          await mongoose.connection.db
+            .collection("events")
+            .insertOne({ ...payloadMongo, event: "ignitionOn" });
+        }
 
-      await mongoose.connection.db
-        .collection("eventshandling")
-        .insertOne(payloadMongo);
+        //harshBreak
+        if (
+          eventId == 253 &&
+          ioElements.filter((item) => {
+            return item.id == 253;
+          })[0]?.value == 2
+        ) {
+          await mongoose.connection.db
+            .collection("events")
+            .insertOne({ ...payloadMongo, event: "harshBreak" });
+        }
+        //harshCornering
+        if (
+          eventId == 253 &&
+          ioElements.filter((item) => {
+            return item.id == 253;
+          })[0]?.value == 3
+        ) {
+          await mongoose.connection.db
+            .collection("events")
+            .insertOne({ ...payloadMongo, event: "harshCornering" });
+        }
+        //harshAcceleration
+        if (
+          eventId == 253 &&
+          ioElements.filter((item) => {
+            return item.id == 253;
+          })[0]?.value == 1
+        ) {
+          await mongoose.connection.db
+            .collection("events")
+            .insertOne({ ...payloadMongo, event: "harshAcceleration" });
+        }
+
+        //overspeed
+        if (
+          eventId == 255 &&
+          ioElements.filter((item) => {
+            return item.id == 255;
+          }).length > 0
+        ) {
+          await mongoose.connection.db
+            .collection("events")
+            .insertOne({ ...payloadMongo, event: "overspeed" });
+        }
+      }
     }
+    // else if (diffinyear == 0 && diffinmonth == 0 && diffinday == 0) {
+    //   payloadMongo.d1 = d1;
+    //   payloadMongo.d2 = d2;
+    //   payloadMongo.diff = diff;
 
-    // const zones = await zoneModel.findByClientId(clientId);
-    // for (var zone in zones) {
-    //   if (zone.zoneType === "Circle") {
-    //     const zoneLat = parseFloat(zone.centerPoints.split(".")[0]); // Parse zone latitude as float
-    //     const zoneLng = parseFloat(zone.centerPoints.split(".")[1]); // Parse zone longitude as float
-    //     const zoneDiameter = parseFloat(zone.latlngCordinates);
-
-    //     // Calculate distance from point to zone center using Pythagorean theorem
-    //     const distance = Math.sqrt(
-    //       Math.pow(gps.latitude - zoneLat, 2) +
-    //         Math.pow(gps.longitude - zoneLng, 2)
-    //     );
-
-    //     // Check if point is within the zone's circle
-    //     if (distance <= zoneDiameter / 2) {
-    //     }
-    //   } else {
-    //     let jArray = JSON.parse(zone.latlngCordinates).map((latlngc) => {
-    //       return { y: latlngc.lat, x: latlngc.lng };
-    //     });
-    //     isPointInPolygon({ x: gps.latitude, y: gps.longitude }, jArray);
-    //   }
-    // }
-    //targetEnteredZone
-    // if (2 == 2) {
-    //   console.log(
-    //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg}`
-    //   );
-    //   fs.appendFileSync(
-    //     "server.txt",
-    //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-    //      (e, r) => {fs.unlinkSync("server.txt")}
-    //   );
-    //   try {
-    //     axios.post(
-    //       "https://backend.vtracksolutions.com/eventshandling/targetEnteredZone",
-    //       {
-    //         clientId,
-    //         vehicleReg,
-    //         dateTime: DateTimeDevice,
-    //         speed: gps?.speed,
-    //         lat: gps?.latitude,
-    //         lng: gps?.longitude,
-    //         zonename: ""
-    //       },
-    //       {
-    //         httpsAgent,
-    //         "Content-Type": "application/json"
-    //       }
-    //     );
-    //   } catch (err) {
-    //     console.log(
-    //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
-    //     );
-    //     fs.appendFileSync(
-    //       "server.txt",
-    //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-    //        (e, r) => {fs.unlinkSync("server.txt")}
-    //     );
-    //   }
-    // }
-    // //targetLeftZone
-    // if (2 == 2) {
-    //   console.log(
-    //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg}`
-    //   );
-    //   fs.appendFileSync(
-    //     "server.txt",
-    //     `overspeed Event in vehicle: ${collectionName}/${vehicleReg} \n`,
-    //      (e, r) => {fs.unlinkSync("server.txt")}
-    //   );
-    //   try {
-    //     axios.post(
-    //       "https://backend.vtracksolutions.com/eventshandling/targetLeftZone",
-    //       {
-    //         clientId,
-    //         vehicleReg,
-    //         dateTime: DateTimeDevice,
-    //         speed: gps?.speed,
-    //         lat: gps?.latitude,
-    //         lng: gps?.longitude,
-    //         zonename: ""
-    //       },
-    //       {
-    //         httpsAgent,
-    //         "Content-Type": "application/json"
-    //       }
-    //     );
-    //   } catch (err) {
-    //     console.log(
-    //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}`
-    //     );
-    //     fs.appendFileSync(
-    //       "server.txt",
-    //       `Error on overSpeeding Event in vehicle: ${collectionName}/${vehicleReg} : ${err.message}\n`,
-    //        (e, r) => {fs.unlinkSync("server.txt")}
-    //     );
-    //   }
+    //   await mongoose.connection.db
+    //     .collection("eventshandling")
+    //     .insertOne(payloadMongo);
     // }
 
     // res.send(payloadMongo)
