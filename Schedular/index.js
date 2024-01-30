@@ -421,7 +421,7 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
             },
             {
               $match: {
-                date: { $gte: fromDate, $lte: toDate },
+                date: { $lt: fromDate },
                 vehicleReg: item.vehicleReg,
                 clientId: client._id
               }
