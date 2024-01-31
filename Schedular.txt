@@ -133,3 +133,83 @@ Schedular run for the region of America/Winnipeg
 data get form collection: avl_626ab783687a74efc44b28fc_today with date range of 2024-01-30T00:00:00 to 2024-01-30T23:59:59
 Schedular run for the region of America/Winnipeg
 data get form collection: avl_626ab783687a74efc44b28fc_today with date range of 2024-01-30T00:00:00 to 2024-01-30T23:59:59
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+data get form collection: avl_626ab783687a74efc44b28fc_today with date range of 2024-01-31T00:00:00 to 2024-01-31T23:59:59
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+data get form collection: avl_626ab783687a74efc44b28fc_today with date range of 2024-01-31T00:00:00 to 2024-01-31T23:59:59
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+data get form collection: avl_626ab783687a74efc44b28fc_today with date range of 2024-01-31T00:00:00 to 2024-01-31T23:59:59
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+data get form collection: avl_626ab783687a74efc44b28fc_today with date range of 2024-01-31T00:00:00 to 2024-01-31T23:59:59
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+data get form collection: avl_626ab783687a74efc44b28fc_today with date range of 2024-01-31T00:00:00 to 2024-01-31T23:59:59
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+data get form collection: avl_626ab783687a74efc44b28fc_today with date range of 2024-01-31T00:00:00 to 2024-01-31T23:59:59
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+data get form collection: avl_626ab783687a74efc44b28fc_today with date range of 2024-01-31T00:00:00 to 2024-01-31T23:59:59
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+Schedular run for the region of Europe/London
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris
+Schedular run for the region of Europe/London
+Schedular run for the region of Asia/Karachi
+Schedular run for the region of America/Halifax
+Schedular run for the region of America/Winnipeg
+Schedular run for the region of Europe/Paris

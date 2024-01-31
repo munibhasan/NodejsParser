@@ -139,41 +139,49 @@ async function getDataFromMongoAndSavetoS3(timeZone, fromDate, toDate) {
                 vehicleReg: item.vehicleReg
               }
             }
+            // { $sort: { date: 1 } }
           ])
           .toArray()
           .then(async (d) => {
             const date = fromDate.split("T")[0];
             if (d.length > 0) {
+              let trips = await getTripsByAvlMongoProms(
+                { unit: client.typeOfUnit, TimeZone: client.timeZone },
+                d
+              );
+
+              if (trips.length > 0) {
+                const compressedData = zlib.gzipSync(JSON.stringify(trips));
+                await saveDataInS3(
+                  `${client._id}/${item.vehicleReg}/trips/${date}.gzip`,
+                  compressedData
+                );
+              }
+
               console.log(d.length);
 
               console.log(`${item.vehicleReg}, ${date},${d.length}`);
 
               /////////
-              // fs.appendFileSync(
-              //   "Schedular.txt",
-              //   `${item.vehicleReg}, ${date},${d.length}\n`,
-              //   (e, r) => {
-              //     fs.unlinkSync("Schedular.txt");
-              //   }
-              // );
-              // const compressedData = zlib.gzipSync(JSON.stringify(d));
-              // await saveDataInS3(
-              //   `${client._id}/${item.vehicleReg}/${date}.gzip`,
-              //   compressedData
-              // );
-              // const dataIds = d.map((it) => {
-              //   return it._id;
-              // });
-
-              // await mongoose.connection.db
-              //   .collection(collectionName)
-              //   .deleteMany({ _id: { $in: dataIds } });
-              /////////
-
-              ///////// my trip work
-              console.log(
-                await getTripsByAvlMongoProms({ unit: client.typeOfUnit }, d)
+              fs.appendFileSync(
+                "Schedular.txt",
+                `${item.vehicleReg}, ${date},${d.length}\n`,
+                (e, r) => {
+                  fs.unlinkSync("Schedular.txt");
+                }
               );
+              const compressedData = zlib.gzipSync(JSON.stringify(d));
+              await saveDataInS3(
+                `${client._id}/${item.vehicleReg}/${date}.gzip`,
+                compressedData
+              );
+              const dataIds = d.map((it) => {
+                return it._id;
+              });
+
+              await mongoose.connection.db
+                .collection(collectionName)
+                .deleteMany({ _id: { $in: dataIds } });
               /////////
 
               // d.map(async (i) => {
@@ -312,6 +320,7 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
                 vehicleReg: item.vehicleReg
               }
             }
+            // { $sort: { date: 1 } }
           ])
           .toArray()
           .then(async (d) => {
@@ -320,6 +329,7 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
               const dates = Object.keys(groupeddata);
               dates.map(async (date) => {
                 try {
+                  /////
                   s3.getObject(
                     {
                       Bucket: process.env.Bucket2,
@@ -334,10 +344,26 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
                           date
                         );
 
+                        let trips = await getTripsByAvlMongoProms(
+                          {
+                            unit: client.typeOfUnit,
+                            TimeZone: client.timeZone
+                          },
+                          groupeddata[date]
+                        );
+                        if (trips.length > 0) {
+                          const compressedData = zlib.gzipSync(
+                            JSON.stringify(trips)
+                          );
+                          await saveDataInS3(
+                            `${client._id}/${item.vehicleReg}/trips/${date}.gzip`,
+                            compressedData
+                          );
+                        }
+
                         const compressedData = zlib.gzipSync(
                           JSON.stringify(groupeddata[date])
                         );
-
                         await saveDataInS3(
                           `${client._id}/${item.vehicleReg}/${date}.gzip`,
                           compressedData
@@ -345,7 +371,6 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
                         const dataIds = groupeddata[date].map((it) => {
                           return it._id;
                         });
-
                         await mongoose.connection.db
                           .collection(collectionName)
                           .deleteMany({ _id: { $in: dataIds } });
@@ -360,12 +385,10 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
                             let jsonfileContent = JSON.parse(
                               deCompressedJSONFile.toString("utf8")
                             );
-
                             const arr = [
                               ...jsonfileContent,
                               ...groupeddata[date]
                             ];
-
                             console.log(item.vehicleReg, date);
                             console.log(
                               jsonfileContent.length,
@@ -375,11 +398,28 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
                               arr.length,
                               "3"
                             );
+                            // arr.sort((a, b) => {
+                            //   return (
+                            //     new Date(a.DateTime) - new Date(b.DateTime)
+                            //   );
+                            // });
 
+                            let trips = await getTripsByAvlMongoProms(
+                              { unit: client.typeOfUnit },
+                              arr
+                            );
+                            if (trips.length > 0) {
+                              const compressedData = zlib.gzipSync(
+                                JSON.stringify(trips)
+                              );
+                              await saveDataInS3(
+                                `${client._id}/${item.vehicleReg}/trips/${date}.gzip`,
+                                compressedData
+                              );
+                            }
                             const compressedData = zlib.gzipSync(
                               JSON.stringify(arr)
                             );
-
                             await saveDataInS3(
                               `${client._id}/${item.vehicleReg}/${date}.gzip`,
                               compressedData
@@ -387,7 +427,6 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
                             const dataIds = groupeddata[date].map((it) => {
                               return it._id;
                             });
-
                             await mongoose.connection.db
                               .collection(collectionName)
                               .deleteMany({ _id: { $in: dataIds } });
@@ -397,6 +436,7 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
                       );
                     }
                   );
+                  //////
                 } catch (e) {
                   console.log(e.message);
                 }
@@ -774,7 +814,7 @@ async function main() {
 
   // America/Winnipeg
   cron.schedule(
-    "30 0 * * *",
+    "15 0 * * *",
     async () => {
       console.log("Schedular run for the region of America/Winnipeg");
 

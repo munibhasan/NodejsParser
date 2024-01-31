@@ -1,5 +1,5 @@
 const moment = require("moment");
-const getDistanceFromLatLonInMilesUtil = require("./getDistanceFromLatLonInMiles.util");
+const getDistanceFromLatLonInMiles = require("./getDistanceFromLatLonInMiles.util");
 
 module.exports = getTripsByAvlMongoProms = (body, avlDataProm) => {
   return new Promise(async (resolve, reject) => {
@@ -8,7 +8,9 @@ module.exports = getTripsByAvlMongoProms = (body, avlDataProm) => {
       var tripRecords = [];
       let rowData = await avlDataProm;
       console.log("rowDataLength ====>", rowData.length);
-
+      rowData.sort((a, b) => {
+        return new Date(a.DateTime) - new Date(b.DateTime);
+      });
       //var sortedArray=[];
 
       for (var i = 0; i < rowData.length; i++) {
@@ -20,6 +22,10 @@ module.exports = getTripsByAvlMongoProms = (body, avlDataProm) => {
         var eventValue = IoElement.Properties.filter((value) => {
           return value._id == 250;
         })[0];
+        if (!rowData[i].date) {
+          newDate = moment(rowData[i].DateTime).utc().format();
+          rowData[i].date = moment(newDate).tz(body.TimeZone).format();
+        }
 
         if (
           eventValue != undefined &&
@@ -142,7 +148,7 @@ module.exports = getTripsByAvlMongoProms = (body, avlDataProm) => {
                   Trip.childRecords[allCounter].X,
                   Trip.childRecords[arrayCounter].Y,
                   Trip.childRecords[arrayCounter].X,
-                  req.body.unit
+                  body.unit
                 );
                 totalSpeed += Trip.childRecords[allCounter].Speed;
                 maxSpeed = Math.max(
@@ -155,7 +161,7 @@ module.exports = getTripsByAvlMongoProms = (body, avlDataProm) => {
 
               averageSpeed = totalSpeed / Trip.childRecords.length;
 
-              if (req.body.unit == "KM") {
+              if (body.unit == "KM") {
                 Trip.AverageSpeed = Math.round(averageSpeed) + " " + "Kph";
                 Trip.MaxSpeed = Math.round(maxSpeed) + " " + "Kph";
               } else {
@@ -167,7 +173,7 @@ module.exports = getTripsByAvlMongoProms = (body, avlDataProm) => {
               Trip.TotalDistance =
                 Math.round(totalDIstanceCovered * 100) / 100 +
                 " " +
-                req.body.unit +
+                body.unit +
                 "(S)";
               Trip.childRecords = [];
             }
@@ -175,10 +181,9 @@ module.exports = getTripsByAvlMongoProms = (body, avlDataProm) => {
         } else if (tripStart == true) {
           var Trip = tripRecords.find((x) => x.Status == "Running");
           if (Trip == undefined) {
-            trip["period"] = req.body.period;
             trip["id"] = rowData[i]._id;
             trip["Status"] = "Running";
-            trip["Vehicle"] = req.body.vehicleReg;
+            trip["Vehicle"] = rowData[i].vehicleReg;
             trip["IMEI"] = rowData[i].deviceIMEI;
             trip["TripStart"] = rowData[i].date;
             trip["fromDateTime"] = rowData[i].date;
@@ -292,7 +297,7 @@ module.exports = getTripsByAvlMongoProms = (body, avlDataProm) => {
           for (a = 0; a < tripRecords.length; a++) {
             var obj = tripRecords[a];
             var zeroJourney;
-            if (req.body.unit == "Mile") {
+            if (body.unit == "Mile") {
               zeroJourney = "0 Mile(S)";
             } else {
               zeroJourney = "0 KM(S)";
