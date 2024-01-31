@@ -10,7 +10,7 @@ const privateKey = fs.readFileSync(path.join(folder, "server_key.pem"), "utf8");
 var ObjectId = require("mongodb").ObjectId;
 const vehicleImport = require("../Modules/Vehicles/model/vehicle.model");
 const vehicleModel = vehicleImport.model;
-
+const getTripsByAvlMongoProms = require("../utils/getTripsByAvlMongos");
 const certificate = fs.readFileSync(
   path.join(folder, "server_cert.pem"),
   "utf8"
@@ -144,14 +144,37 @@ async function getDataFromMongoAndSavetoS3(timeZone, fromDate, toDate) {
           .then(async (d) => {
             const date = fromDate.split("T")[0];
             if (d.length > 0) {
+              console.log(d.length);
+
               console.log(`${item.vehicleReg}, ${date},${d.length}`);
-              fs.appendFileSync(
-                "Schedular.txt",
-                `${item.vehicleReg}, ${date},${d.length}\n`,
-                (e, r) => {
-                  fs.unlinkSync("Schedular.txt");
-                }
+
+              /////////
+              // fs.appendFileSync(
+              //   "Schedular.txt",
+              //   `${item.vehicleReg}, ${date},${d.length}\n`,
+              //   (e, r) => {
+              //     fs.unlinkSync("Schedular.txt");
+              //   }
+              // );
+              // const compressedData = zlib.gzipSync(JSON.stringify(d));
+              // await saveDataInS3(
+              //   `${client._id}/${item.vehicleReg}/${date}.gzip`,
+              //   compressedData
+              // );
+              // const dataIds = d.map((it) => {
+              //   return it._id;
+              // });
+
+              // await mongoose.connection.db
+              //   .collection(collectionName)
+              //   .deleteMany({ _id: { $in: dataIds } });
+              /////////
+
+              ///////// my trip work
+              console.log(
+                await getTripsByAvlMongoProms({ unit: client.typeOfUnit }, d)
               );
+              /////////
 
               // d.map(async (i) => {
               //   if (i.OsmElement === null) {
@@ -166,18 +189,6 @@ async function getDataFromMongoAndSavetoS3(timeZone, fromDate, toDate) {
               //   }
               //   return i;
               // });
-              const compressedData = zlib.gzipSync(JSON.stringify(d));
-              await saveDataInS3(
-                `${client._id}/${item.vehicleReg}/${date}.gzip`,
-                compressedData
-              );
-              const dataIds = d.map((it) => {
-                return it._id;
-              });
-
-              await mongoose.connection.db
-                .collection(collectionName)
-                .deleteMany({ _id: { $in: dataIds } });
             }
           });
         ///////////////
@@ -211,7 +222,7 @@ async function getDataFromMongoAndSavetoS3(timeZone, fromDate, toDate) {
               $match: {
                 date: { $gte: fromDate, $lte: toDate },
                 vehicleReg: item.vehicleReg,
-                clientId: client._id
+                clientId: client._id.toString()
               }
             }
           ])
@@ -423,7 +434,7 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
               $match: {
                 date: { $lt: fromDate },
                 vehicleReg: item.vehicleReg,
-                clientId: client._id
+                clientId: client._id.toString()
               }
             }
           ])
@@ -550,9 +561,6 @@ async function main() {
               { $limit: 100 }
             ])
             .toArray();
-          console.log(
-            `osm null shedular${item.vehicleReg}, ${collectionData.length}`
-          );
 
           if (collectionData.length > 0) {
             const locationDataPromises = collectionData.map(
@@ -766,7 +774,7 @@ async function main() {
 
   // America/Winnipeg
   cron.schedule(
-    "15 0 * * *",
+    "30 0 * * *",
     async () => {
       console.log("Schedular run for the region of America/Winnipeg");
 
@@ -780,7 +788,7 @@ async function main() {
       const fromDate = moment(
         momentTz(new Date())
           .tz("America/Winnipeg")
-          .subtract(1, "days")
+          .subtract(0, "days")
           .startOf("day")
           .toString()
       ).format("YYYY-MM-DDT00:00:00");
@@ -788,7 +796,7 @@ async function main() {
       const toDate = moment(
         momentTz(new Date())
           .tz("America/Winnipeg")
-          .subtract(1, "days")
+          .subtract(0, "days")
           .startOf("day")
           .toString()
       ).format("YYYY-MM-DDT23:59:59");
