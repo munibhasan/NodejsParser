@@ -7,7 +7,7 @@
 
 # testing
 /coverage
-
+Schedular.txt
 # production
 package-lock.json
 /files

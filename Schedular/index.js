@@ -828,7 +828,7 @@ async function main() {
       const fromDate = moment(
         momentTz(new Date())
           .tz("America/Winnipeg")
-          .subtract(0, "days")
+          .subtract(1, "days")
           .startOf("day")
           .toString()
       ).format("YYYY-MM-DDT00:00:00");
@@ -836,7 +836,7 @@ async function main() {
       const toDate = moment(
         momentTz(new Date())
           .tz("America/Winnipeg")
-          .subtract(0, "days")
+          .subtract(1, "days")
           .startOf("day")
           .toString()
       ).format("YYYY-MM-DDT23:59:59");
