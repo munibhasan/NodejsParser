@@ -96,7 +96,8 @@ app.post("/data", async (req, res) => {
       ioElements,
       DateTimeDevice,
       eventId,
-      zone
+      zone,
+      users
     } = req.body;
     let { timeZone } = req.body;
     let osmElements = null;
@@ -123,6 +124,7 @@ app.post("/data", async (req, res) => {
       DateTime: new Date(timestamp),
       DateTimeDevice,
       ServerDateTime: localDate + " " + localTime,
+      users,
       GpsElement: {
         Y: gps?.latitude,
         X: gps?.longitude,

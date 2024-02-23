@@ -579,14 +579,15 @@ async function getoldDataFromMongoAndSavetoS3(timeZone, fromDate) {
 }
 
 async function main() {
-  cron.schedule("*/30 * * * *", async () => {
+  cron.schedule("*/1 * * * *", async () => {
     try {
       (
         await clientModel.find({
-          _id: { $ne: new ObjectId("65575c79332051f73cb9a06b") }
+          _id: new ObjectId("65575c79332051f73cb9a06b")
         })
       ).map(async (client) => {
         const vehicles = await vehicleModel.find({ clientId: client._id });
+        console.log(vehicles.length);
         vehicles.map(async (item) => {
           const collectionName = `avl_${client._id}_today`;
           const collectionData = await mongoose.connection.db
@@ -598,11 +599,12 @@ async function main() {
                   vehicleReg: item.vehicleReg
                 }
               },
-              { $limit: 100 }
+              { $limit: 10 }
             ])
             .toArray();
 
           if (collectionData.length > 0) {
+            console.log(collectionData.length, item.vehicleReg);
             const locationDataPromises = collectionData.map(
               async (document) => {
                 try {

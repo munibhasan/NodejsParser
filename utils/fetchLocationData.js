@@ -7,7 +7,8 @@ async function fetchLocationData(latitude, longitude) {
   // if (redisCoordinates) {
   //   return JSON.parse(redisCoordinates);
   // }
-  const nominatimBaseUrl = "https://eurosofttechosm.com/nominatim/reverse.php";
+  // const nominatimBaseUrl = "https://eurosofttechosm.com/nominatim/reverse.php";
+  const nominatimBaseUrl = "http://88.198.47.11/nominatim/reverse.php";
   const urlParameters = `?lat=${latitude}&lon=${longitude}&zoom=19&format=jsonv2`;
 
   try {
@@ -26,6 +27,7 @@ async function fetchLocationData(latitude, longitude) {
     console.log("Failed to fetch location data");
     return null;
   } catch (error) {
+    console.log(error);
     return null;
   }
 }
