@@ -24,10 +24,10 @@ async function fetchLocationData(latitude, longitude) {
       }
       return response.data;
     }
-    console.log("Failed to fetch location data");
+    // console.log("Failed to fetch location data");
     return null;
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     return null;
   }
 }
