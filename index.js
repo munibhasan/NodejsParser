@@ -99,11 +99,13 @@ app.post("/data", async (req, res) => {
       zone,
       users
     } = req.body;
+    let { OsmElement } = req.body;
     let { timeZone } = req.body;
-    let osmElements = null;
     // if (clientId != "65575c79332051f73cb9a06b") {
     // }
-    osmElements = await fetchLocationData(gps.latitude, gps.longitude);
+    if (OsmElement == null) {
+      OsmElement = await fetchLocationData(gps.latitude, gps.longitude);
+    }
 
     if (timeZone === undefined) {
       timeZone = (
@@ -134,7 +136,7 @@ app.post("/data", async (req, res) => {
         Satellites: gps?.satellites,
         Speed: gps?.speed
       },
-      OsmElement: osmElements != null ? osmElements : null,
+      OsmElement: OsmElement != null ? OsmElement : null,
       IoElement: {
         EventId: eventId,
         PropertiesCount: ioElements.length,
@@ -203,7 +205,7 @@ app.post("/data", async (req, res) => {
         try {
           axios
             .post(
-              "https://backend.vtracksolutions.com/eventshandling/ignitionOff",
+              `${process.env.BackendUrl}/eventshandling/ignitionOff`,
               {
                 clientId,
                 vehicleReg,
@@ -266,7 +268,7 @@ app.post("/data", async (req, res) => {
         try {
           axios
             .post(
-              "https://backend.vtracksolutions.com/eventshandling/ignitionOn",
+              `${process.env.BackendUrl}/eventshandling/ignitionOn`,
               {
                 clientId,
                 vehicleReg,
@@ -330,7 +332,7 @@ app.post("/data", async (req, res) => {
         try {
           axios
             .post(
-              "https://backend.vtracksolutions.com/eventshandling/harshBreak",
+              `${process.env.BackendUrl}/eventshandling/harshBreak`,
               {
                 clientId,
                 vehicleReg,
@@ -393,7 +395,7 @@ app.post("/data", async (req, res) => {
         try {
           axios
             .post(
-              "https://backend.vtracksolutions.com/eventshandling/harshCornering",
+              `${process.env.BackendUrl}/eventshandling/harshCornering`,
               {
                 clientId,
                 vehicleReg,
@@ -456,7 +458,7 @@ app.post("/data", async (req, res) => {
         try {
           axios
             .post(
-              "https://backend.vtracksolutions.com/eventshandling/harshAcceleration",
+              `${process.env.BackendUrl}/eventshandling/harshAcceleration`,
               {
                 clientId,
                 vehicleReg,
@@ -520,7 +522,7 @@ app.post("/data", async (req, res) => {
         try {
           axios
             .post(
-              "https://backend.vtracksolutions.com/eventshandling/overSpeeding",
+              `${process.env.BackendUrl}/eventshandling/overSpeeding`,
               {
                 clientId,
                 vehicleReg,
