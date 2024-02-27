@@ -103,6 +103,7 @@ app.post("/data", async (req, res) => {
     let { timeZone } = req.body;
     // if (clientId != "65575c79332051f73cb9a06b") {
     // }
+    let OsmElement2 = OsmElement;
     if (OsmElement == null) {
       OsmElement = await fetchLocationData(gps.latitude, gps.longitude);
     }
@@ -137,6 +138,7 @@ app.post("/data", async (req, res) => {
         Speed: gps?.speed
       },
       OsmElement: OsmElement != null ? OsmElement : null,
+      OsmElement2,
       IoElement: {
         EventId: eventId,
         PropertiesCount: ioElements.length,
