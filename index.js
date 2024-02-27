@@ -101,9 +101,10 @@ app.post("/data", async (req, res) => {
     } = req.body;
     let { timeZone } = req.body;
     let osmElements = null;
-    if (clientId != "65575c79332051f73cb9a06b") {
-      osmElements = await fetchLocationData(gps.latitude, gps.longitude);
-    }
+    // if (clientId != "65575c79332051f73cb9a06b") {
+    // }
+    osmElements = await fetchLocationData(gps.latitude, gps.longitude);
+
     if (timeZone === undefined) {
       timeZone = (
         await clientModel.findOne({

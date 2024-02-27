@@ -7,12 +7,12 @@ async function fetchLocationData(latitude, longitude) {
   // if (redisCoordinates) {
   //   return JSON.parse(redisCoordinates);
   // }
-  const nominatimBaseUrl = "https://eurosofttechosm.com/nominatim/reverse.php";
+  // const nominatimBaseUrl = "https://eurosofttechosm.com/nominatim/reverse.php";
   // const nominatimBaseUrl = "http://88.198.47.11/nominatim/reverse.php";
-  const urlParameters = `?lat=${latitude}&lon=${longitude}&zoom=19&format=jsonv2`;
+  const urlParameters = `${process.env.NominatimURL}?lat=${latitude}&lon=${longitude}&zoom=19&format=jsonv2`;
 
   try {
-    const response = await axios.get(nominatimBaseUrl + urlParameters);
+    const response = await axios.get(urlParameters);
 
     if (response.status === 200) {
       // Expire it in 10 days: EX: 60 * 60 * 24 seconds = 1 day * 10 = 10 days.
