@@ -139,6 +139,7 @@ app.post("/data", async (req, res) => {
       },
       OsmElement: OsmElement != null ? OsmElement : null,
       OsmElement2,
+
       IoElement: {
         EventId: eventId,
         PropertiesCount: ioElements.length,
