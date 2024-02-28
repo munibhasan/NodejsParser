@@ -583,7 +583,7 @@ async function main() {
     try {
       (
         await clientModel.find({
-          _id: { $ne: new ObjectId("65575c79332051f73cb9a06b") }
+          // _id: { $ne: new ObjectId("65575c79332051f73cb9a06b") }
         })
       ).map(async (client) => {
         const vehicles = await vehicleModel.find({ clientId: client._id });
