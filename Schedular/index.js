@@ -664,7 +664,7 @@ async function main() {
       const fromDate = moment(
         momentTz(new Date())
           .tz("Australia/Sydney")
-          .subtract(1, "days")
+          .subtract(0, "days")
           .startOf("day")
           .toString()
       ).format("YYYY-MM-DDT00:00:00");
@@ -672,7 +672,7 @@ async function main() {
       const toDate = moment(
         momentTz(new Date())
           .tz("Australia/Sydney")
-          .subtract(1, "days")
+          .subtract(0, "days")
           .startOf("day")
           .toString()
       ).format("YYYY-MM-DDT23:59:59");
@@ -682,6 +682,7 @@ async function main() {
       timezone: "Australia/Sydney" //9
     }
   );
+
   cron.schedule(
     "30 0 * * *",
     async () => {
@@ -696,7 +697,7 @@ async function main() {
       const fromDate = moment(
         momentTz(new Date())
           .tz("Australia/Sydney")
-          .subtract(1, "days")
+          .subtract(0, "days")
           .startOf("day")
           .toString()
       ).format("YYYY-MM-DDT00:00:00");
