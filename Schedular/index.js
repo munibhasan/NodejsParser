@@ -649,6 +649,64 @@ async function main() {
     }
   });
 
+  // Australia/Sydney
+  cron.schedule(
+    "15 0 * * *",
+    async () => {
+      console.log("Schedular run for the region of Australia/Sydney");
+      fs.appendFileSync(
+        "Schedular.txt",
+        "Schedular run for the region of Europe/London\n",
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
+      );
+      const fromDate = moment(
+        momentTz(new Date())
+          .tz("Australia/Sydney")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT00:00:00");
+
+      const toDate = moment(
+        momentTz(new Date())
+          .tz("Australia/Sydney")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT23:59:59");
+      getDataFromMongoAndSavetoS3("Australia/Sydney", fromDate, toDate);
+    },
+    {
+      timezone: "Australia/Sydney" //9
+    }
+  );
+  cron.schedule(
+    "30 0 * * *",
+    async () => {
+      console.log("2nd Schedular run for the region of Australia/Sydney");
+      fs.appendFileSync(
+        "Schedular.txt",
+        "Schedular run for the region of Europe/London\n",
+        (e, r) => {
+          fs.unlinkSync("Schedular.txt");
+        }
+      );
+      const fromDate = moment(
+        momentTz(new Date())
+          .tz("Australia/Sydney")
+          .subtract(1, "days")
+          .startOf("day")
+          .toString()
+      ).format("YYYY-MM-DDT00:00:00");
+
+      getoldDataFromMongoAndSavetoS3("Australia/Sydney", fromDate);
+    },
+    {
+      timezone: "Australia/Sydney" //9
+    }
+  );
   // Europe/London
   cron.schedule(
     "15 0 * * *",
